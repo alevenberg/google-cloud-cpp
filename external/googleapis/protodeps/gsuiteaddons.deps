@@ -1,0 +1,13 @@
+@com_google_googleapis//google/api:annotations_proto
+@com_google_googleapis//google/api:client_proto
+@com_google_googleapis//google/api:field_behavior_proto
+@com_google_googleapis//google/api:http_proto
+@com_google_googleapis//google/api:launch_stage_proto
+@com_google_googleapis//google/api:resource_proto
+@com_google_googleapis//google/apps/script/type/calendar:calendar_proto
+@com_google_googleapis//google/apps/script/type/docs:docs_proto
+@com_google_googleapis//google/apps/script/type/drive:drive_proto
+@com_google_googleapis//google/apps/script/type/gmail:gmail_proto
+@com_google_googleapis//google/apps/script/type/sheets:sheets_proto
+@com_google_googleapis//google/apps/script/type/slides:slides_proto
+@com_google_googleapis//google/apps/script/type:type_proto
