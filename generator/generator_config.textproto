@@ -2210,6 +2210,14 @@ service {
   endpoint_location_style: LOCATION_DEPENDENT
 }
 
+# G Suite Add-ons
+service {
+  service_proto_path: "google/cloud/gsuiteaddons/v1/gsuiteaddons.proto"
+  product_path: "google/cloud/gsuiteaddons/v1"
+  initial_copyright_year: "2023"
+  retryable_status_codes: ["kUnavailable", "kUnknown"]
+}
+
 # IAM
 service {
   service_proto_path: "google/iam/credentials/v1/iamcredentials.proto"
