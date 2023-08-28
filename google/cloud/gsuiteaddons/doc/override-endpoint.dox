@@ -1,0 +1,25 @@
+/*!
+@page gsuiteaddons-override-endpoint How to Override the Default Endpoint
+
+In some cases, you may need to override the default endpoint used by the client
+library. Use the
+[EndpointOption](@ref google::cloud::EndpointOption) when initializing the
+client library to change this default.
+
+<!-- inject-endpoint-snippet-start -->
+For example, this will override the default endpoint for `gsuiteaddons_v1::GSuiteAddOnsClient`:
+
+@snippet g_suite_add_ons_client_samples.cc set-client-endpoint
+
+<!-- inject-endpoint-snippet-end -->
+
+*/
+
+// <!-- inject-endpoint-pages-start -->
+
+/*! @page gsuiteaddons_v1::GSuiteAddOnsClient-endpoint-snippet Override gsuiteaddons_v1::GSuiteAddOnsClient Endpoint Configuration
+
+@snippet google/cloud/gsuiteaddons/v1/samples/g_suite_add_ons_client_samples.cc set-client-endpoint
+
+*/
+// <!-- inject-endpoint-pages-end -->
