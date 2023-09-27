@@ -1,8 +1,8 @@
 # Google Workspace Add-ons API C++ Client Library
 
 This directory contains an idiomatic C++ client library for the
-[Google Workspace Add-ons API][cloud-service-docs], a service to \<UNKNOWN - NO
-SERVICE CONFIG DOCUMENTATION SUMMARY>
+[Google Workspace Add-ons API][cloud-service-docs], a service to allow
+deployments to GCP of "add ons" for things like GMail and Google Docs.
 
 While this library is **GA**, please note that the Google Cloud C++ client
 libraries do **not** follow [Semantic Versioning](https://semver.org/).
@@ -17,7 +17,7 @@ this library.
 <!-- inject-quickstart-start -->
 
 ```cc
-#include "google/cloud/gsuiteaddons/ EDIT HERE .h"
+#include "google/cloud/gsuiteaddons/v1/g_suite_add_ons_client.h"
 #include "google/cloud/project.h"
 #include <iostream>
 
@@ -27,11 +27,12 @@ int main(int argc, char* argv[]) try {
     return 1;
   }
 
-  namespace gsuiteaddons = ::google::cloud::gsuiteaddons;
-  auto client = gsuiteaddons::Client(gsuiteaddons::MakeConnection());
+  namespace gsuiteaddons = ::google::cloud::gsuiteaddons_v1;
+  auto client = gsuiteaddons::GSuiteAddOnsClient(
+      gsuiteaddons::MakeGSuiteAddOnsConnection());
 
   auto const project = google::cloud::Project(argv[1]);
-  for (auto r : client.List /*EDIT HERE*/ (project.FullName())) {
+  for (auto r : client.ListDeployments(project.FullName())) {
     if (!r) throw std::move(r).status();
     std::cout << r->DebugString() << "\n";
   }

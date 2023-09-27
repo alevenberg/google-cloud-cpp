@@ -297,6 +297,12 @@ function (google_cloud_cpp_load_protodeps var file)
     # in one library vs. the protos in a second library. The AIPs frown upon
     # such dependencies, but they do happen.
     set(target_substitutions
+       "apps_script_type_calendar_calendar_protos\;apps_script_type_calendar_calendar_addon_manifest_protos"
+       "apps_script_type_docs_docs_protos\;apps_script_type_docs_docs_addon_manifest_protos"
+       "apps_script_type_drive_drive_protos\;apps_script_type_drive_drive_addon_manifest_protos"
+       "apps_script_type_gmail_gmail_protos\;apps_script_type_gmail_gmail_addon_manifest_protos"
+       "apps_script_type_sheets_sheets_protos\;apps_script_type_sheets_sheets_addon_manifest_protos"
+       "apps_script_type_slides_slides_protos\;apps_script_type_slides_slides_addon_manifest_protos"
         "grafeas_v1_grafeas_protos\;grafeas_protos"
         "iam_v2_policy_protos\;iam_v2_protos"
         "logging_type_type_protos\;logging_type_protos"
@@ -305,6 +311,7 @@ function (google_cloud_cpp_load_protodeps var file)
         "cloud_documentai_v1_documentai_protos\;documentai_protos")
 
     foreach (line IN LISTS contents)
+        # message(STATUS "${line}")
         if ("${line}" STREQUAL "")
             continue()
         endif ()
@@ -316,7 +323,8 @@ function (google_cloud_cpp_load_protodeps var file)
         string(REPLACE "google-cloud-cpp::google/" "google-cloud-cpp::" line
                        "${line}")
         string(REPLACE "/" "_" line "${line}")
-        if ("${line}" IN_LIST targets_to_omit)
+        message(STATUS "${line}")
+          if ("${line}" IN_LIST targets_to_omit)
             continue()
         endif ()
         foreach (substitution IN LISTS target_substitutions)

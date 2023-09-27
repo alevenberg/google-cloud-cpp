@@ -133,6 +133,7 @@ the APIs in these libraries are stable, and are ready for production use.
 - [Discovery Engine API](/google/cloud/discoveryengine/README.md)
 - [Policy Simulator](/google/cloud/policysimulator/README.md)
 - [Policy Troubleshooter](/google/cloud/policytroubleshooter/README.md)
+- [GSuite addons](/google/cloud/gsuiteaddons/README.md)
 
 ### Cloud IoT
 

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 //! [all]
-#include "google/cloud/gsuiteaddons/ EDIT HERE .h"
+#include "google/cloud/gsuiteaddons/v1/g_suite_add_ons_client.h"
 #include "google/cloud/project.h"
 #include <iostream>
 
@@ -23,11 +23,12 @@ int main(int argc, char* argv[]) try {
     return 1;
   }
 
-  namespace gsuiteaddons = ::google::cloud::gsuiteaddons;
-  auto client = gsuiteaddons::Client(gsuiteaddons::MakeConnection());
+  namespace gsuiteaddons = ::google::cloud::gsuiteaddons_v1;
+  auto client = gsuiteaddons::GSuiteAddOnsClient(
+      gsuiteaddons::MakeGSuiteAddOnsConnection());
 
   auto const project = google::cloud::Project(argv[1]);
-  for (auto r : client.List /*EDIT HERE*/ (project.FullName())) {
+  for (auto r : client.ListDeployments(project.FullName())) {
     if (!r) throw std::move(r).status();
     std::cout << r->DebugString() << "\n";
   }

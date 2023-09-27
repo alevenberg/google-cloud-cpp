@@ -2,8 +2,7 @@
 
 @mainpage Google Workspace Add-ons API C++ Client Library
 
-An idiomatic C++ client library for the [Google Workspace Add-ons API][cloud-service-docs], a service
-to <UNKNOWN - NO SERVICE CONFIG DOCUMENTATION SUMMARY>
+An idiomatic C++ client library for the [Google Workspace Add-ons API][cloud-service-docs], a service to allow deployments to GCP of "add ons" for things like GMail and Google Docs.
 
 While this library is **GA**, please note that the Google Cloud C++ client libraries do **not** follow
 [Semantic Versioning](https://semver.org/).
