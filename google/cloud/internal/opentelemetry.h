@@ -21,6 +21,7 @@
 #include "google/cloud/status_or.h"
 #include "google/cloud/version.h"
 #ifdef GOOGLE_CLOUD_CPP_HAVE_OPENTELEMETRY
+#include <opentelemetry/common/key_value_iterable.h>
 #include <opentelemetry/context/propagation/text_map_propagator.h>
 #include <opentelemetry/nostd/shared_ptr.h>
 #include <opentelemetry/nostd/string_view.h>
@@ -65,6 +66,27 @@ opentelemetry::nostd::shared_ptr<opentelemetry::trace::Tracer> GetTracer(
  */
 opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> MakeSpan(
     opentelemetry::nostd::string_view name);
+
+/**
+ * Start a [span] using the current [tracer] with the specified attributes.
+ *
+ * The current tracer is determined by the prevailing `CurrentOptions()`.
+ *
+ * @see https://opentelemetry.io/docs/instrumentation/cpp/manual/#start-a-span
+ *
+ * [span]:
+ * https://opentelemetry.io/docs/concepts/signals/traces/#spans-in-opentelemetry
+ * [tracer]: https://opentelemetry.io/docs/concepts/signals/traces/#tracer
+ */
+opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> MakeSpan(
+    opentelemetry::nostd::string_view name,
+    std::initializer_list<std::pair<opentelemetry::nostd::string_view,
+                                    opentelemetry::common::AttributeValue>>
+        attributes) {
+  opentelemetry::trace::StartSpanOptions options;
+  options.kind = opentelemetry::trace::SpanKind::kClient;
+  return GetTracer(CurrentOptions())->StartSpan(name, attributes, options);
+}
 
 /**
  * Extracts information from a `Status` and adds it to a span.
