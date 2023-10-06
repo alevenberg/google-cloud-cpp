@@ -37,15 +37,52 @@ void TracingMessageBatch::SaveMessage(pubsub::Message m) {
   child_->SaveMessage(std::move(m));
 }
 
-// TODO(#12528): Implement functionality for Flush.
-void TracingMessageBatch::Flush() { child_->Flush(); }
+void TracingMessageBatch::Flush() {
+  using opentelemetry::trace::SpanContext;
+  int64_t message_count = message_spans_.size();
+  auto constexpr kMaxOtelLinks = 128;
+  bool const kIsSmallBatch = message_count < kMaxOtelLinks;
+  std::vector<std::pair<SpanContext, std::map<std::string, int64_t>>>
+      links;
+
+  // If the batch size is less than the max size, add the links to a single
+  // span.
+  if (kIsSmallBatch) {
+    for (int64_t i = 0; i < message_count; i++) {
+      auto span = message_spans_.at(i);
+      std::map<std::string,int64_t> link_attributes;
+      link_attributes["messaging.pubsub.message.link"] = i;
+      links.push_back(std::make_pair(span->GetContext(),link_attributes));
+    }
+  }
+  auto batch_sink_span_parent = internal::MakeSpan(
+      "BatchSink::AsyncPublish",
+      /*attributes=*/
+      {{"messaging.pubsub.num_messages_in_batch", message_count}},
+      /*links*/ links);
+
+  // Clear message spans.
+  message_spans_.clear();
+
+  batch_sink_spans_.push_back(batch_sink_span_parent);
+
+  // Set the batch sink parent span.
+  auto async_scope = internal::GetTracer(internal::CurrentOptions())
+                         ->WithActiveSpan(batch_sink_span_parent);
+  child_->Flush();
+}
 
 // TODO(#12528): Implement functionality for FlushCallback.
 void TracingMessageBatch::FlushCallback() { child_->FlushCallback(); }
 
 std::vector<opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span>>
-TracingMessageBatch::GetSpans() const {
+TracingMessageBatch::GetMessageSpans() const {
   return message_spans_;
+}
+
+std::vector<opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span>>
+TracingMessageBatch::GetBatchSinkSpans() const {
+  return batch_sink_spans_;
 }
 
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_END
