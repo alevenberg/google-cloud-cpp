@@ -62,7 +62,7 @@ https://cloud.google.com/docs/authentication/production
 1. Compile this example using Bazel:
 
    ```bash
-   cd $HOME/google-cloud-cpp/google/cloud/gsuiteaddons/quickstart
+   cd $HOME/google-cloud-cpp/google/cloud/gsuiteaddons/quickstart:quickstart
    bazel build ...
    ```
 

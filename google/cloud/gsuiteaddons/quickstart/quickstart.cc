@@ -28,6 +28,16 @@ int main(int argc, char* argv[]) try {
       gsuiteaddons::MakeGSuiteAddOnsConnection());
 
   auto const project = google::cloud::Project(argv[1]);
+
+ // Test CreateDeployment call 
+ google::cloud::gsuiteaddons::v1::Deployment deployment;
+ deployment.set_name(project.FullName() +  "/deployment/alevenb-deploy");
+ google::cloud::gsuiteaddons::v1::AddOns add_on;
+ google::apps::script::type::gmail::GmailAddOnManifest gmail_add_on;
+ *add_on.mutable_gmail() = gmail_add_on;
+ *deployment.mutable_add_ons() = add_on;
+  client.CreateDeployment(project.FullName(), deployment, project.FullName() +  "/deployment/alevenb-deploy");
+
   for (auto r : client.ListDeployments(project.FullName())) {
     if (!r) throw std::move(r).status();
     std::cout << r->DebugString() << "\n";
