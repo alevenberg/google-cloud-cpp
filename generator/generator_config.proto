@@ -165,7 +165,7 @@ message ServiceConfiguration {
   // A mapping from the service name as defined in the googleapis repo to the
   // name that will be used for the library generation.
   map<string, string> service_name_mapping = 26;
-  }
+}
 
 message DiscoveryDocumentDefinedProduct {
   // Location of Discovery Document for services that only support REST.

@@ -641,9 +641,10 @@ std::string GetServiceNameMappingOrReturnDefault(VarsDictionary const& vars,
   if (service_name_mappings == vars.end()) {
     return name;
   }
-  std::vector<std::string> mappings = absl::StrSplit(service_name_mappings->second, ',');
+  std::vector<std::string> mappings =
+      absl::StrSplit(service_name_mappings->second, ',');
   for (auto& mapping : mappings) {
-     std::vector<std::string> kv = absl::StrSplit(mapping, ':');
+    std::vector<std::string> kv = absl::StrSplit(mapping, ':');
     if (kv.size() != 2) {
       continue;
     }
