@@ -13,35 +13,60 @@
 // limitations under the License.
 
 //! [START pubsub_quickstart_subscriber] [all]
+#include "google/cloud/opentelemetry/configure_basic_tracing.h"
 #include "google/cloud/pubsub/message.h"
 #include "google/cloud/pubsub/subscriber.h"
+#include "google/cloud/opentelemetry_options.h"
 #include <iostream>
 
+// bazel run //google/cloud/pubsub/quickstart:subscriber_quickstart
 int main(int argc, char* argv[]) try {
-  if (argc != 3) {
-    std::cerr << "Usage: " << argv[0] << " <project-id> <subscription-id>\n";
-    return 1;
-  }
-
-  std::string const project_id = argv[1];
-  std::string const subscription_id = argv[2];
+  std::string const project_id = "alevenb-test";
+  std::string const subscription_id = "my-sub";
 
   auto constexpr kWaitTimeout = std::chrono::seconds(30);
 
   // Create a namespace alias to make the code easier to read.
   namespace pubsub = ::google::cloud::pubsub;
+  namespace otel = ::google::cloud::otel;
+  namespace experimental = ::google::cloud::experimental;
+  namespace gc = ::google::cloud;
+
+  auto project = gc::Project(project_id);
+  auto configuration = otel::ConfigureBasicTracing(project);
+
+  // Create a client with OpenTelemetry tracing enabled.
+  auto options =
+      gc::Options{}.set<gc::OpenTelemetryTracingOption>(true);
 
   auto subscriber = pubsub::Subscriber(pubsub::MakeSubscriberConnection(
-      pubsub::Subscription(project_id, subscription_id)));
+      pubsub::Subscription(project_id, subscription_id), options));
+
+  // auto message = subscriber.Pull()
+  // auto response = subscriber.Pull();
+  // if (!response) throw std::move(response).status();
+  // std::cout << "Received message " << response->message << "\n";
+  // std::move(response->handler).ack();
 
   auto session =
       subscriber.Subscribe([&](pubsub::Message const& m, pubsub::AckHandler h) {
-        std::cout << "Received message " << m << "\n";
+        std::stringstream msg;
+        msg << "Received message " << m
+            << "with attributes: " << m.attributes().size() << "\n";
+        std::cout << msg.str();
+
+        for (const auto& item : m.attributes()) {
+          std::stringstream attribute_msg;
+          attribute_msg << "Key: " << item.first << "Value: " << item.second
+                        << "\n";
+          std::cout << attribute_msg.str();
+        }
         std::move(h).ack();
       });
 
   std::cout << "Waiting for messages on " + subscription_id + "...\n";
 
+  // session.wait();
   // Blocks until the timeout is reached.
   auto result = session.wait_for(kWaitTimeout);
   if (result == std::future_status::timeout) {
