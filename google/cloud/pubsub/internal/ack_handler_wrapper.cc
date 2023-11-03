@@ -14,6 +14,7 @@
 
 #include "google/cloud/pubsub/internal/ack_handler_wrapper.h"
 #include "google/cloud/log.h"
+#include "google/cloud/internal/opentelemetry.h"
 
 namespace google {
 namespace cloud {
@@ -21,6 +22,7 @@ namespace pubsub_internal {
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
 
 void AckHandlerWrapper::ack() {
+  auto span = internal::MakeSpan("ack");
   auto f = impl_->ack();
   if (message_id_.empty()) return;
   f.then([id = std::move(message_id_)](auto f) {
@@ -28,17 +30,22 @@ void AckHandlerWrapper::ack() {
     if (status.ok()) return;
     GCP_LOG(WARNING) << "error while trying to ack(), status=" << status
                      << ", message_id=" << id;
-  });
+  }).then([span = span](auto f) {
+    span->End();
+});
 }
 
 void AckHandlerWrapper::nack() {
-  auto f = impl_->nack();
+   auto span = internal::MakeSpan("nack");
+ auto f = impl_->nack();
   if (message_id_.empty()) return;
   f.then([id = std::move(message_id_)](auto f) {
     auto status = f.get();
     if (status.ok()) return;
     GCP_LOG(WARNING) << "error while trying to nack(), status=" << status
                      << ", message_id=" << id;
+  }).then([span = span](auto f) {
+    span->End();
   });
 }
 
