@@ -112,6 +112,7 @@ std::shared_ptr<SubscriberStub> CreateDecoratedStubs(
   }
 
   if (internal::TracingEnabled(options)) {
+    std::cout<< "debug" << std::endl;
     stub = MakeSubscriberTracingStub(std::move(stub));
   }
   return stub;

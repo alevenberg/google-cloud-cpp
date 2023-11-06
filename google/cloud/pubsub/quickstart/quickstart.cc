@@ -33,12 +33,12 @@ int main(int argc, char* argv[]) try {
   namespace otel = ::google::cloud::otel;
 
   auto project = gc::Project(project_id);
-  auto configuration = otel::ConfigureBasicTracing(project);
+  // auto configuration = otel::ConfigureBasicTracing(project);
 
   // Create a client with OpenTelemetry tracing enabled.
-  auto options = gc::Options{}
-                     .set<gc::OpenTelemetryTracingOption>(true)
-                    .set<pubsub::MaxBatchMessagesOption>(1000)  .set<pubsub::MaxHoldTimeOption>(std::chrono::seconds(1));
+  auto options = gc::Options{};
+                    //  .set<gc::OpenTelemetryTracingOption>(true)
+                    // .set<pubsub::MaxBatchMessagesOption>(1000)  .set<pubsub::MaxHoldTimeOption>(std::chrono::seconds(1));
 
   auto publisher = pubsub::Publisher(pubsub::MakePublisherConnection(
       pubsub::Topic(project_id, topic_id), options));

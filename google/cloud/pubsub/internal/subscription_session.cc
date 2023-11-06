@@ -20,6 +20,7 @@
 #include "google/cloud/pubsub/internal/subscription_lease_management.h"
 #include "google/cloud/pubsub/internal/subscription_message_queue.h"
 #include "google/cloud/log.h"
+#include "google/cloud/internal/opentelemetry.h"
 
 namespace google {
 namespace cloud {

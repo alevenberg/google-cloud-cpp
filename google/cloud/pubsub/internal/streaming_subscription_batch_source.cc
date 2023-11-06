@@ -17,6 +17,7 @@
 #include "google/cloud/pubsub/internal/extend_leases_with_retry.h"
 #include "google/cloud/internal/async_retry_loop.h"
 #include "google/cloud/internal/url_encode.h"
+#include "google/cloud/internal/opentelemetry.h"
 #include "google/cloud/log.h"
 #include <iterator>
 #include <ostream>
@@ -366,8 +367,9 @@ void StreamingSubscriptionBatchSource::ReadLoop() {
   auto weak = WeakFromThis();
   using ResponseType =
       absl::optional<google::pubsub::v1::StreamingPullResponse>;
-  stream->Read().then([weak, stream](future<ResponseType> f) {
-    if (auto self = weak.lock()) self->OnRead(f.get());
+  auto span = internal::MakeSpan("readloop");
+  stream->Read().then([span, weak, stream](future<ResponseType> f) {
+    if (auto self = weak.lock()) {self->OnRead(f.get()); }span->End();
   });
 }
 
