@@ -51,8 +51,7 @@ class TracingAckHandler : public pubsub::PullAckHandler::Impl {
          {"messaging.gcp_pubsub.message.ack_id", ack_id_},
          {"messaging.gcp_pubsub.destination.subscription",
           subscription_.subscription_id()},
-               {"messaging.gcp_pubsub.message.delivery_attempt",
-        delivery_attempt_},
+         {"messaging.gcp_pubsub.message.delivery_attempt", delivery_attempt_},
          {"messaging.gcp_pubsub.destination.subscription.template",
           subscription_.FullName()}},
         options);
