@@ -37,26 +37,30 @@ opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> StartPullSpan() {
       subscription.subscription_id() + " receieve",
       {{sc::kMessagingSystem, "gcp_pubsub"},
        {sc::kMessagingOperation, "receieve"},
-       {sc::kCodeFunction, "pubsub::SubscriberConnection::Pull"}},
+       {sc::kCodeFunction, "pubsub::SubscriberConnection::Pull"},
+       {"messaging.gcp_pubsub.destination.subscription",
+        subscription.subscription_id()},
+       {"messaging.gcp_pubsub.destination.subscription.template",
+        subscription.FullName()}},
       options);
   return span;
 }
 
 StatusOr<pubsub::PullResponse> EndPullSpan(
     opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> span,
-     std::shared_ptr<opentelemetry::context::propagation::TextMapPropagator>
-      propagator,
+    std::shared_ptr<opentelemetry::context::propagation::TextMapPropagator>
+        propagator,
     StatusOr<pubsub::PullResponse> response) {
   namespace sc = opentelemetry::trace::SemanticConventions;
   if (response.ok()) {
     auto message = response.value().message;
-    span->SetAttribute(sc::kMessagingMessageId,
-                      message.message_id());
+    span->SetAttribute(sc::kMessagingMessageId, message.message_id());
     span->SetAttribute("messaging.gcp_pubsub.message.ordering_key",
                        message.ordering_key());
-    span->SetAttribute(  /*sc::kMessagingMessageEnvelopeSize=*/"messaging.message.envelope.size",
+    span->SetAttribute(
+        /*sc::kMessagingMessageEnvelopeSize=*/"messaging.message.envelope.size",
         static_cast<std::int64_t>(MessageSize(message)));
-    auto conext =ExtractTraceContext(message, *propagator);
+    auto context = ExtractTraceContext(message, *propagator);
     // span->AddLink(context, {{}});
   }
   return internal::EndSpan(*span, std::move(response));
