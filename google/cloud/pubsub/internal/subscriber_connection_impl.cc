@@ -15,6 +15,7 @@
 #include "google/cloud/pubsub/internal/subscriber_connection_impl.h"
 #include "google/cloud/pubsub/internal/ack_handler_wrapper.h"
 #include "google/cloud/pubsub/internal/default_pull_ack_handler.h"
+#include "google/cloud/pubsub/internal/tracing_ack_handler.h"
 #include "google/cloud/pubsub/internal/subscription_session.h"
 #include "google/cloud/pubsub/options.h"
 #include "google/cloud/grpc_options.h"
@@ -52,6 +53,7 @@ future<Status> SubscriberConnectionImpl::ExactlyOnceSubscribe(
 StatusOr<pubsub::PullResponse> SubscriberConnectionImpl::Pull() {
   auto const& current = internal::CurrentOptions();
   auto subscription = current.get<pubsub::SubscriptionOption>();
+  bool tracing_enabled = google::cloud::internal::TracingEnabled(current);
 
   google::pubsub::v1::PullRequest request;
   request.set_subscription(subscription.FullName());
@@ -78,6 +80,9 @@ StatusOr<pubsub::PullResponse> SubscriberConnectionImpl::Pull() {
           background_->cq(), stub_, current, std::move(subscription),
           std::move(*received_message.mutable_ack_id()),
           received_message.delivery_attempt());
+      if (tracing_enabled) {
+        // impl = std::move(pubsub_internal::MakeTracingAckHandler(std::move(impl)));
+      }
       auto message = pubsub_internal::FromProto(
           std::move(*received_message.mutable_message()));
       return pubsub::PullResponse{pubsub::PullAckHandler(std::move(impl)),

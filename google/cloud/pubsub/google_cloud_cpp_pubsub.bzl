@@ -112,7 +112,7 @@ google_cloud_cpp_pubsub_hdrs = [
     "message.h",
     "options.h",
     "publisher.h",
-    "publisher_connection.h",
+   "internal/tracing_ack_handler.h", "publisher_connection.h",
     "publisher_options.h",
     "pull_ack_handler.h",
     "pull_response.h",
