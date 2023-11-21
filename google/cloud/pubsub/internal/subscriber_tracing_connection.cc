@@ -27,10 +27,77 @@ namespace cloud {
 namespace pubsub_internal {
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
 
+opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> StartPullSpan() {
+  auto const& current = internal::CurrentOptions();
+  auto subscription = current.get<pubsub::SubscriptionOption>();
+  namespace sc = opentelemetry::trace::SemanticConventions;
+  opentelemetry::trace::StartSpanOptions options;
+  options.kind = opentelemetry::trace::SpanKind::kConsumer;
+  auto span = internal::MakeSpan(
+      subscription.subscription_id() + " receieve",
+      {{sc::kMessagingSystem, "gcp_pubsub"},
+       {sc::kMessagingOperation, "receieve"},
+       {sc::kCodeFunction, "pubsub::SubscriberConnection::Pull"}},
+      options);
+  return span;
+}
+
+StatusOr<pubsub::PullResponse> EndPullSpan(
+    opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> span,
+     std::shared_ptr<opentelemetry::context::propagation::TextMapPropagator>
+      propagator,
+    StatusOr<pubsub::PullResponse> response) {
+  namespace sc = opentelemetry::trace::SemanticConventions;
+  if (response.ok()) {
+    auto message = response.value().message;
+    span->SetAttribute(sc::kMessagingMessageId,
+                      message.message_id());
+    span->SetAttribute("messaging.gcp_pubsub.message.ordering_key",
+                       message.ordering_key());
+    span->SetAttribute(  /*sc::kMessagingMessageEnvelopeSize=*/"messaging.message.envelope.size",
+        static_cast<std::int64_t>(MessageSize(message)));
+    auto conext =ExtractTraceContext(message, *propagator);
+    // span->AddLink(context, {{}});
+  }
+  return internal::EndSpan(*span, std::move(response));
+}
+
+class SubscriberTracingConnection : public pubsub::SubscriberConnection {
+ public:
+  explicit SubscriberTracingConnection(
+      std::shared_ptr<pubsub::SubscriberConnection> child_)
+      : child_(std::move(child_)),
+        propagator_(std::make_shared<
+                    opentelemetry::trace::propagation::HttpTraceContext>()) {}
+
+  ~SubscriberTracingConnection() override = default;
+
+  future<Status> Subscribe(SubscribeParams p) override {
+    return child_->Subscribe(p);
+  };
+
+  future<Status> ExactlyOnceSubscribe(ExactlyOnceSubscribeParams p) override {
+    return child_->ExactlyOnceSubscribe(p);
+  };
+
+  StatusOr<pubsub::PullResponse> Pull() override {
+    auto span = StartPullSpan();
+
+    auto scope = opentelemetry::trace::Scope(span);
+    return EndPullSpan(std::move(span), propagator_, child_->Pull());
+  };
+
+  Options options() override { return child_->options(); };
+
+ private:
+  std::shared_ptr<pubsub::SubscriberConnection> child_;
+  std::shared_ptr<opentelemetry::context::propagation::TextMapPropagator>
+      propagator_;
+};
+
 std::shared_ptr<pubsub::SubscriberConnection> MakeSubscriberTracingConnection(
     std::shared_ptr<pubsub::SubscriberConnection> connection) {
-  return std::make_shared<SubscriberTracingConnection>(
-                                                      std::move(connection));
+  return std::make_shared<SubscriberTracingConnection>(std::move(connection));
 }
 
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_END
