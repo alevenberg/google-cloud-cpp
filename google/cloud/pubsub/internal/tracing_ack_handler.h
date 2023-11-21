@@ -57,6 +57,9 @@ class TracingAckHandler : public pubsub::PullAckHandler::Impl {
 
  private:
   std::unique_ptr<pubsub::PullAckHandler::Impl> child_;
+  pubsub::Subscription subscription_;
+  std::string ack_id_;
+  std::int32_t delivery_attempt_;
 };
 
 std::unique_ptr<pubsub::PullAckHandler::Impl> MakeTracingAckHandler(
