@@ -77,11 +77,13 @@ StatusOr<pubsub::PullResponse> SubscriberConnectionImpl::Pull() {
       auto received_message =
           std::move(response->mutable_received_messages()->at(0));
        std::unique_ptr<pubsub::PullAckHandler::Impl> impl = std::make_unique<pubsub_internal::DefaultPullAckHandler>(
-          background_->cq(), stub_, current, std::move(subscription),
-          std::move(*received_message.mutable_ack_id()),
+          background_->cq(), stub_, current, subscription,
+       *received_message.mutable_ack_id(),
           received_message.delivery_attempt());
       if (tracing_enabled) {
-        impl = std::move(pubsub_internal::MakeTracingAckHandler(std::move(impl)));
+        impl = std::move(pubsub_internal::MakeTracingAckHandler(std::move(impl), std::move(subscription),
+          std::move(*received_message.mutable_ack_id()),
+          received_message.delivery_attempt())));
       }
       auto message = pubsub_internal::FromProto(
           std::move(*received_message.mutable_message()));

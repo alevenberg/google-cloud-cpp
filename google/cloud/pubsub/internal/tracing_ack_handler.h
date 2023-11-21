@@ -29,8 +29,13 @@ GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
 class TracingAckHandler : public pubsub::PullAckHandler::Impl {
  public:
   explicit TracingAckHandler(
-      std::unique_ptr<pubsub::PullAckHandler::Impl> child)
-      : child_(std::move(child)) {}
+      std::unique_ptr<pubsub::PullAckHandler::Impl> child,
+      pubsub::Subscription subscription, std::string ack_id,
+      std::int32_t delivery_attempt)
+      : child_(std::move(child)),
+        subscription_(std::move(subscription)),
+        ack_id_(std::move(ack_id)),
+        delivery_attempt_(delivery_attempt) {}
   ~TracingAckHandler() override = default;
 
   future<Status> ack() override {
@@ -63,8 +68,11 @@ class TracingAckHandler : public pubsub::PullAckHandler::Impl {
 };
 
 std::unique_ptr<pubsub::PullAckHandler::Impl> MakeTracingAckHandler(
-    std::unique_ptr<pubsub::PullAckHandler::Impl> handler) {
-  return std::make_unique<TracingAckHandler>(std::move(handler));
+    std::unique_ptr<pubsub::PullAckHandler::Impl> handler,
+      pubsub::Subscription subscription, std::string ack_id,
+      std::int32_t delivery_attempt) {
+  return std::make_unique<TracingAckHandler>(std::move(handler), std::move(subscription),
+        std::move(ack_id),(delivery_attempt));
 }
 
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_END
