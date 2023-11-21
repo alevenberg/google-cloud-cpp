@@ -32,6 +32,7 @@
 #include "google/cloud/log.h"
 #include <algorithm>
 #include <memory>
+#include "google/cloud/internal/opentelemetry.h"
 
 namespace google {
 namespace cloud {

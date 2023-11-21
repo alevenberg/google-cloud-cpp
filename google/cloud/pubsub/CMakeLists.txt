@@ -110,7 +110,9 @@ add_library(
     internal/batching_publisher_connection.h
     internal/batching_publisher_tracing_connection.cc
     internal/batching_publisher_tracing_connection.h
-    internal/blocking_publisher_connection_impl.cc
+    internal/subscriber_tracing_connection.cc
+    internal/subscriber_tracing_connection.h
+        internal/blocking_publisher_connection_impl.cc
     internal/blocking_publisher_connection_impl.h
     internal/blocking_publisher_tracing_connection.cc
     internal/blocking_publisher_tracing_connection.h
