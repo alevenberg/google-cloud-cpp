@@ -19,12 +19,66 @@
 #include "google/cloud/opentelemetry_options.h"
 #include <iostream>
 
+auto constexpr kWaitTimeout = std::chrono::minutes(1);
+
+void WaitForSession(google::cloud::future<google::cloud::Status> session,
+                    std::string const& name) {
+  std::cout << "\nWaiting for session [" << name << "]... " << std::flush;
+  auto result = session.wait_for(kWaitTimeout);
+  if (result == std::future_status::timeout) {
+    std::cout << "TIMEOUT" << std::endl;
+    throw std::runtime_error("session timeout");
+  }
+  std::cout << "DONE (" << session.get() << ")" << std::endl;
+}
+class EventCounter {
+ public:
+  EventCounter() = default;
+
+  void Increment() {
+    std::lock_guard<std::mutex> lk(mu_);
+    ++counter_;
+    cv_.notify_all();
+  }
+
+  std::int64_t Current() {
+    std::lock_guard<std::mutex> lk(mu_);
+    return counter_;
+  }
+
+  template <typename Predicate>
+  void Wait(Predicate&& predicate,
+            google::cloud::future<google::cloud::Status> session,
+            std::string const& name) {
+    std::unique_lock<std::mutex> lk(mu_);
+    cv_.wait_for(lk, kWaitTimeout,
+                 [this, &predicate] { return predicate(counter_); });
+    lk.unlock();
+    session.cancel();
+    WaitForSession(std::move(session), name);
+  }
+
+  template <typename Predicate>
+  void Wait(Predicate&& predicate) {
+    std::unique_lock<std::mutex> lk(mu_);
+    cv_.wait_for(lk, kWaitTimeout,
+                 [this, &predicate] { return predicate(counter_); });
+  }
+
+  static EventCounter& Instance() {
+    static auto* const kInstance = new EventCounter;
+    return *kInstance;
+  }
+
+ private:
+  std::int64_t counter_ = 0;
+  std::mutex mu_;
+  std::condition_variable cv_;
+};
 // bazel run //google/cloud/pubsub/quickstart:subscriber_quickstart
 int main(int argc, char* argv[]) try {
   std::string const project_id = "alevenb-test";
   std::string const subscription_id = "my-sub";
-
-  auto constexpr kWaitTimeout = std::chrono::seconds(30);
 
   // Create a namespace alias to make the code easier to read.
   namespace pubsub = ::google::cloud::pubsub;
@@ -36,18 +90,11 @@ int main(int argc, char* argv[]) try {
   auto configuration = otel::ConfigureBasicTracing(project);
 
   // Create a client with OpenTelemetry tracing enabled.
-  auto options =
-      gc::Options{}.set<gc::OpenTelemetryTracingOption>(true);
+  auto options = gc::Options{}.set<gc::OpenTelemetryTracingOption>(true);
 
   auto subscriber = pubsub::Subscriber(pubsub::MakeSubscriberConnection(
       pubsub::Subscription(project_id, subscription_id), options));
-
-  // auto message = subscriber.Pull()
-  // auto response = subscriber.Pull();
-  // if (!response) throw std::move(response).status();
-  // std::cout << "Received message " << response->message << "\n";
-  // std::move(response->handler).ack();
-
+auto current = EventCounter::Instance().Current(); 
   auto session =
       subscriber.Subscribe([&](pubsub::Message const& m, pubsub::AckHandler h) {
         std::stringstream msg;
@@ -62,18 +109,15 @@ int main(int argc, char* argv[]) try {
           std::cout << attribute_msg.str();
         }
         std::move(h).ack();
+        EventCounter::Instance().Increment();
       });
 
-  std::cout << "Waiting for messages on " + subscription_id + "...\n";
-
-  // session.wait();
+  // // session.wait();
   // Blocks until the timeout is reached.
-  auto result = session.wait_for(kWaitTimeout);
-  if (result == std::future_status::timeout) {
-    std::cout << "timeout reached, ending session\n";
-    session.cancel();
-  }
-
+  EventCounter::Instance().Wait(
+      [current](std::int64_t count) { return count > current; }, std::move(session), "name");
+  session.cancel();
+  session.get();
   return 0;
 } catch (google::cloud::Status const& status) {
   std::cerr << "google::cloud::Status thrown: " << status << "\n";
