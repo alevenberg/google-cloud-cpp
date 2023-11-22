@@ -94,7 +94,6 @@ int main(int argc, char* argv[]) try {
 
   auto subscriber = pubsub::Subscriber(pubsub::MakeSubscriberConnection(
       pubsub::Subscription(project_id, subscription_id), options));
-auto current = EventCounter::Instance().Current(); 
   auto session =
       subscriber.Subscribe([&](pubsub::Message const& m, pubsub::AckHandler h) {
         std::stringstream msg;
@@ -113,9 +112,10 @@ auto current = EventCounter::Instance().Current();
       });
 
   // // session.wait();
+  auto max = 10;
   // Blocks until the timeout is reached.
   EventCounter::Instance().Wait(
-      [current](std::int64_t count) { return count > current; }, std::move(session), "name");
+      [max](std::int64_t count) { return count < max; }, std::move(session), "name");
   session.cancel();
   session.get();
   return 0;
