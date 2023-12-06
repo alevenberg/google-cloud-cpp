@@ -86,7 +86,7 @@ auto MakeParent(Links const& links, Spans const& message_spans,
   for (auto const& message_span : message_spans) {
 #if OPENTELEMETRY_ABI_VERSION_NO >= 2
     message_span->AddEvent("gl-cpp.publish_start");
-    message_span->AddLink(context, {});
+    message_span->AddLink(context, {{}});
 #else
     message_span->AddEvent("gl-cpp.publish_start",
                            Attributes{{"gcp_pubsub.publish.trace_id", trace_id},
