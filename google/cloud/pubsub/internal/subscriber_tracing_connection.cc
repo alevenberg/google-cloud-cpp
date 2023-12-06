@@ -63,13 +63,23 @@ StatusOr<pubsub::PullResponse> EndPullSpan(
     span->SetAttribute(
         /*sc::kMessagingMessageEnvelopeSize=*/"messaging.message.envelope.size",
         static_cast<std::int64_t>(MessageSize(message)));
-    // std::cout << "OPENTELEMETRY_ABI_VERSION_NO" << std::to_string(OPENTELEMETRY_ABI_VERSION_NO) << "\n"; 
-  #if OPENTELEMETRY_ABI_VERSION_NO >= 2
+
     auto context = ExtractTraceContext(message, *propagator);
-    span->AddLink(opentelemetry::trace::GetSpan(context)->GetContext(), {{}});
-        // span->AddLink(context, {{"attribute", 2}});
- #endif
- }
+    auto producer_span = opentelemetry::trace::GetSpan(context);
+    auto producer_span_context = producer_span->GetContext();
+    if (producer_span_context.IsSampled() && producer_span_context.IsValid()) {
+#if OPENTELEMETRY_ABI_VERSION_NO >= 2
+      span->AddLink(producer_span_context,
+                             {{/*sc::kMessagingOperation=*/
+                               "messaging.operation", "create"}});
+    #else
+      span->SetAttribute("gcp_pubsub.create.trace_id",
+                         internal::ToString(producer_span_context.trace_id()));
+      span->SetAttribute("gcp_pubsub.create.span_id",
+                         internal::ToString(producer_span_context.span_id()));
+#endif
+    }
+  }
   return internal::EndSpan(*span, std::move(response));
 }
 
