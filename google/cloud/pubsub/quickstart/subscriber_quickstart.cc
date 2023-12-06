@@ -91,9 +91,10 @@ int main(int argc, char* argv[]) try {
 
   // Create a client with OpenTelemetry tracing enabled.
   auto options = gc::Options{}.set<gc::OpenTelemetryTracingOption>(true);
- auto current = EventCounter::Instance().Current();
   auto subscriber = pubsub::Subscriber(pubsub::MakeSubscriberConnection(
       pubsub::Subscription(project_id, subscription_id), options));
+
+ auto current = EventCounter::Instance().Current();
   auto session =
       subscriber.Subscribe([&](pubsub::Message const& m, pubsub::AckHandler h) {
         EventCounter::Instance().Increment();
@@ -114,7 +115,29 @@ int main(int argc, char* argv[]) try {
   // Blocks until the timeout is reached.
   EventCounter::Instance().Wait(
       [current](std::int64_t count) { return count > current; });
-  session.cancel();
+ 
+   current = EventCounter::Instance().Current();
+   session =
+      subscriber.Subscribe([&](pubsub::Message const& m, pubsub::AckHandler h) {
+        EventCounter::Instance().Increment();
+        std::stringstream msg;
+        msg << "Received message " << m
+            << "with attributes: " << m.attributes().size() << "\n";
+        std::cout << msg.str();
+
+        for (const auto& item : m.attributes()) {
+          std::stringstream attribute_msg;
+          attribute_msg << "Key: " << item.first << "Value: " << item.second
+                        << "\n";
+          std::cout << attribute_msg.str();
+        }
+        std::move(h).nack();
+      });
+
+  // Blocks until the timeout is reached.
+  EventCounter::Instance().Wait(
+      [current](std::int64_t count) { return count > current; });
+     session.cancel();
   session.get();
   return 0;
 } catch (google::cloud::Status const& status) {

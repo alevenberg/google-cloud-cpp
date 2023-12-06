@@ -45,6 +45,11 @@ int main(int argc, char* argv[]) try {
   std::cout << "Received message " << response->message << "\n";
   std::move(response->handler).ack();
 
+   response = subscriber.Pull();
+  if (!response) throw std::move(response).status();
+  std::cout << "Received message " << response->message << "\n";
+  std::move(response->handler).nack();
+
   return 0;
 } catch (google::cloud::Status const& status) {
   std::cerr << "google::cloud::Status thrown: " << status << "\n";
