@@ -16,6 +16,7 @@
 #include "google/cloud/pubsub/internal/ack_handler_wrapper.h"
 #include "google/cloud/pubsub/internal/default_pull_ack_handler.h"
 #include "google/cloud/pubsub/internal/subscription_session.h"
+#include "google/cloud/pubsub/internal/message_propagator.h"
 #include "google/cloud/pubsub/options.h"
 #include "google/cloud/grpc_options.h"
 #include "google/cloud/internal/make_status.h"
@@ -24,6 +25,7 @@
 #include "opentelemetry/trace/context.h"
 #include "opentelemetry/trace/semantic_conventions.h"
 #include "opentelemetry/trace/span.h"
+#include "opentelemetry/trace/propagation/http_trace_context.h"
 
 namespace google {
 namespace cloud {
