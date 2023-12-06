@@ -23,7 +23,8 @@ GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
 
 void AckHandlerWrapper::ack() {
   auto span = internal::MakeSpan("ack");
-  auto f = impl_->ack();
+     auto scope = opentelemetry::trace::Scope(span);
+      auto f = impl_->ack();
   if (message_id_.empty()) return;
   f.then([id = std::move(message_id_)](auto f) {
     auto status = f.get();
