@@ -15,6 +15,7 @@
 #include "google/cloud/pubsub/internal/subscription_message_queue.h"
 #include "google/cloud/pubsub/message.h"
 #include <algorithm>
+#include "google/cloud/internal/opentelemetry.h"
 
 namespace google {
 namespace cloud {
@@ -46,6 +47,11 @@ void SubscriptionMessageQueue::Read(std::size_t max_callbacks) {
 
 future<Status> SubscriptionMessageQueue::AckMessage(std::string const& ack_id) {
   HandlerDone(ack_id);
+  //  auto const& current = internal::CurrentOptions();
+  // auto subscription = current.get<pubsub::SubscriptionOption>();
+  //  auto span = internal::MakeSpan(
+  //     subscription.subscription_id() + " settle");
+
   return source_->AckMessage(ack_id);
 }
 

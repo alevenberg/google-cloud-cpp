@@ -15,6 +15,7 @@
 #include "google/cloud/pubsub/internal/ack_handler_wrapper.h"
 #include "google/cloud/log.h"
 #include "google/cloud/internal/opentelemetry.h"
+#include <opentelemetry/trace/scope.h>
 
 namespace google {
 namespace cloud {
@@ -31,7 +32,7 @@ void AckHandlerWrapper::ack() {
     if (status.ok()) return;
     GCP_LOG(WARNING) << "error while trying to ack(), status=" << status
                      << ", message_id=" << id;
-  }).then([span = span](auto f) {
+  }).then([span](auto) {
     span->End();
 });
 }
@@ -45,7 +46,7 @@ void AckHandlerWrapper::nack() {
     if (status.ok()) return;
     GCP_LOG(WARNING) << "error while trying to nack(), status=" << status
                      << ", message_id=" << id;
-  }).then([span = span](auto f) {
+  }).then([span = span](auto) {
     span->End();
   });
 }

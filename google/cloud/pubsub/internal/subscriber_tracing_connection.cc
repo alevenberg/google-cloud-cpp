@@ -21,6 +21,9 @@
 #include "google/cloud/internal/make_status.h"
 #include "google/cloud/internal/retry_loop.h"
 #include "google/cloud/internal/retry_loop_helpers.h"
+#include "opentelemetry/trace/context.h"
+#include "opentelemetry/trace/semantic_conventions.h"
+#include "opentelemetry/trace/span.h"
 
 namespace google {
 namespace cloud {
@@ -60,9 +63,13 @@ StatusOr<pubsub::PullResponse> EndPullSpan(
     span->SetAttribute(
         /*sc::kMessagingMessageEnvelopeSize=*/"messaging.message.envelope.size",
         static_cast<std::int64_t>(MessageSize(message)));
+    // std::cout << "OPENTELEMETRY_ABI_VERSION_NO" << std::to_string(OPENTELEMETRY_ABI_VERSION_NO) << "\n"; 
+  #if OPENTELEMETRY_ABI_VERSION_NO >= 2
     auto context = ExtractTraceContext(message, *propagator);
-    // span->AddLink(context, {{}});
-  }
+    span->AddLink(opentelemetry::trace::GetSpan(context)->GetContext(), {{}});
+        // span->AddLink(context, {{"attribute", 2}});
+ #endif
+ }
   return internal::EndSpan(*span, std::move(response));
 }
 
