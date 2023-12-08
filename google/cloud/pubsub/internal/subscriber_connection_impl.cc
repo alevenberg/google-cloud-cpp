@@ -27,7 +27,7 @@ namespace google {
 namespace cloud {
 namespace pubsub_internal {
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
-
+// 
 SubscriberConnectionImpl::SubscriberConnectionImpl(
     Options opts, std::shared_ptr<pubsub_internal::SubscriberStub> stub)
     : opts_(std::move(opts)),
@@ -51,6 +51,7 @@ future<Status> SubscriberConnectionImpl::ExactlyOnceSubscribe(
 }
 
 StatusOr<pubsub::PullResponse> SubscriberConnectionImpl::Pull() {
+  // StartPull
   auto const& current = internal::CurrentOptions();
   auto subscription = current.get<pubsub::SubscriptionOption>();
   bool tracing_enabled = google::cloud::internal::TracingEnabled(current);
