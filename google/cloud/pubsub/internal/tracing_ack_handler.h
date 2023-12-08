@@ -32,6 +32,7 @@ namespace cloud {
 namespace pubsub_internal {
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
 
+//rename PullAckHandler
 class TracingAckHandler : public pubsub::PullAckHandler::Impl {
  public:
   explicit TracingAckHandler(
@@ -100,6 +101,7 @@ class TracingAckHandler : public pubsub::PullAckHandler::Impl {
 
  private:
   std::unique_ptr<pubsub::PullAckHandler::Impl> child_;
+  opentelemetry::SpanContext span_;
   pubsub::Subscription subscription_;
   std::string ack_id_;
   std::int32_t delivery_attempt_;

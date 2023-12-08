@@ -54,7 +54,7 @@ StatusOr<pubsub::PullResponse> SubscriberConnectionImpl::Pull() {
   auto const& current = internal::CurrentOptions();
   auto subscription = current.get<pubsub::SubscriptionOption>();
   bool tracing_enabled = google::cloud::internal::TracingEnabled(current);
-
+  
   google::pubsub::v1::PullRequest request;
   request.set_subscription(subscription.FullName());
   // Ask Pub/Sub to return at most 1 message.
@@ -73,14 +73,17 @@ StatusOr<pubsub::PullResponse> SubscriberConnectionImpl::Pull() {
         return internal::InternalError("invalid response, mismatched ID count",
                                        GCP_ERROR_INFO());
       }
-
+      
       auto received_message =
           std::move(response->mutable_received_messages()->at(0));
+      // UnpackMessage
+      // MakePullAckHandler
       std::unique_ptr<pubsub::PullAckHandler::Impl> impl =
           std::make_unique<pubsub_internal::DefaultPullAckHandler>(
               background_->cq(), stub_, current, subscription,
               *received_message.mutable_ack_id(),
               received_message.delivery_attempt());
+      // FromProtoWithAttributesStripped
       auto message = pubsub_internal::FromProto(
           std::move(*received_message.mutable_message()));
        if (tracing_enabled) {

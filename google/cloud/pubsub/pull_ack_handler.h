@@ -122,6 +122,8 @@ class PullAckHandler {
     }
     /// The implementation for `PullAckHandler::delivery_attempt()`
     virtual std::int32_t delivery_attempt() const { return 0; }
+     virtual std::string ack_id() const override;
+ virtual pubsub::Subscription subscription() const override;
   };
 
   /**
