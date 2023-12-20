@@ -101,7 +101,7 @@ class TracingAckHandler : public pubsub::PullAckHandler::Impl {
 
  private:
   std::unique_ptr<pubsub::PullAckHandler::Impl> child_;
-  opentelemetry::SpanContext span_;
+  // opentelemetry::SpanContext span_;
   pubsub::Subscription subscription_;
   std::string ack_id_;
   std::int32_t delivery_attempt_;
