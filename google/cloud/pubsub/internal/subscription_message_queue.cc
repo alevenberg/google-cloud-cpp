@@ -75,7 +75,9 @@ void SubscriptionMessageQueue::OnRead(
 void SubscriptionMessageQueue::OnRead(
     std::unique_lock<std::mutex> lk,
     google::pubsub::v1::StreamingPullResponse r) {
-  auto handle_response = [&] {
+   auto span = internal::MakeSpan("SubscriptionMessageQueue::OnRead");
+  auto scope = internal::OTelScope(span); 
+    auto handle_response = [&] {
     shutdown_manager_->FinishedOperation("OnRead");
     for (auto& m : *r.mutable_received_messages()) {
       auto key = m.message().ordering_key();

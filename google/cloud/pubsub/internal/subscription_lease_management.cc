@@ -14,7 +14,7 @@
 
 #include "google/cloud/pubsub/internal/subscription_lease_management.h"
 #include <chrono>
-
+#include "google/cloud/internal/opentelemetry.h"
 namespace google {
 namespace cloud {
 namespace pubsub_internal {
@@ -73,7 +73,8 @@ void SubscriptionLeaseManagement::ExtendLeases(std::vector<std::string>,
 
 void SubscriptionLeaseManagement::OnRead(
     StatusOr<google::pubsub::v1::StreamingPullResponse> const& response) {
-  if (!response) {
+    auto span = internal::MakeSpan("SubscriptionLeaseManagement::OnRead");
+  auto scope = internal::OTelScope(span);  if (!response) {
     shutdown_manager_->MarkAsShutdown(__func__, response.status());
     std::unique_lock<std::mutex> lk(mu_);
     // Cancel any existing timers.

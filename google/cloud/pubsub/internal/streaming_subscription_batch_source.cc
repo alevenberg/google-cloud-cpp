@@ -280,7 +280,9 @@ void StreamingSubscriptionBatchSource::OnInitialWrite(RetryLoopState const& rs,
 void StreamingSubscriptionBatchSource::OnInitialRead(
     RetryLoopState rs,
     absl::optional<google::pubsub::v1::StreamingPullResponse> response) {
-  shutdown_manager_->FinishedOperation("InitialRead");
+    auto span = internal::MakeSpan("StreamingSubscriptionBatchSource::OnInitialRead");
+  auto scope = internal::OTelScope(span); 
+   shutdown_manager_->FinishedOperation("InitialRead");
   if (!response.has_value()) {
     OnInitialError(std::move(rs));
     return;
@@ -318,7 +320,8 @@ void StreamingSubscriptionBatchSource::OnInitialError(RetryLoopState rs) {
 
 void StreamingSubscriptionBatchSource::OnInitialFinish(RetryLoopState rs,
                                                        Status status) {
-  if (!rs.retry_policy->OnFailure(status)) {
+    auto span = internal::MakeSpan("StreamingSubscriptionBatchSource::OnInitialFinish");
+  auto scope = internal::OTelScope(span);  if (!rs.retry_policy->OnFailure(status)) {
     OnRetryFailure(std::move(status));
     return;
   }
@@ -373,11 +376,14 @@ void StreamingSubscriptionBatchSource::ReadLoop() {
   });
 }
 
+// OnRead
 void StreamingSubscriptionBatchSource::OnRead(
     absl::optional<google::pubsub::v1::StreamingPullResponse> response) {
   auto weak = WeakFromThis();
   std::unique_lock<std::mutex> lk(mu_);
   pending_read_ = false;
+  auto span = internal::MakeSpan("StreamingSubscriptionBatchSource::OnRead");
+  auto scope = internal::OTelScope(span);
   if (response && stream_state_ == StreamState::kActive && !shutdown_) {
     auto update_stream_deadline = false;
     if (response->has_subscription_properties()) {
@@ -403,6 +409,8 @@ void StreamingSubscriptionBatchSource::OnRead(
 
 void StreamingSubscriptionBatchSource::ShutdownStream(
     std::unique_lock<std::mutex> lk, char const* reason) {
+        auto span = internal::MakeSpan("StreamingSubscriptionBatchSource::ShutdownStream");
+  auto scope = internal::OTelScope(span);
   if (stream_state_ != StreamState::kActive &&
       stream_state_ != StreamState::kDisconnecting) {
     return;
