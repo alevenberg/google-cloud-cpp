@@ -13,8 +13,8 @@
 // limitations under the License.
 
 #include "google/cloud/pubsub/internal/subscription_lease_management.h"
-#include <chrono>
 #include "google/cloud/internal/opentelemetry.h"
+#include <chrono>
 namespace google {
 namespace cloud {
 namespace pubsub_internal {
@@ -24,6 +24,7 @@ std::chrono::seconds constexpr SubscriptionLeaseManagement::kMinimumAckDeadline;
 std::chrono::seconds constexpr SubscriptionLeaseManagement::kAckDeadlineSlack;
 
 void SubscriptionLeaseManagement::Start(BatchCallback cb) {
+  auto span = internal::MakeSpan("SubscriptionLeaseManagement::Start");
   auto weak = std::weak_ptr<SubscriptionLeaseManagement>(shared_from_this());
   child_->Start(
       [weak, cb](StatusOr<google::pubsub::v1::StreamingPullResponse> r) {
@@ -43,18 +44,27 @@ void SubscriptionLeaseManagement::Shutdown() {
 
 future<Status> SubscriptionLeaseManagement::AckMessage(
     std::string const& ack_id) {
+  auto span = internal::MakeSpan("SubscriptionLeaseManagement::AckMessage");
+
   std::unique_lock<std::mutex> lk(mu_);
   leases_.erase(ack_id);
   lk.unlock();
-  return child_->AckMessage(ack_id);
+  return child_->AckMessage(ack_id).then([span = std::move(span)](auto f) {
+    internal::EndSpan(*span);
+    return f;
+  });
 }
 
 future<Status> SubscriptionLeaseManagement::NackMessage(
     std::string const& ack_id) {
+  auto span = internal::MakeSpan("SubscriptionLeaseManagement::NackMessage");
   std::unique_lock<std::mutex> lk(mu_);
   leases_.erase(ack_id);
   lk.unlock();
-  return child_->NackMessage(ack_id);
+  return child_->NackMessage(ack_id).then([span = std::move(span)](auto f) {
+    internal::EndSpan(*span);
+    return f;
+  });
 }
 
 future<Status> SubscriptionLeaseManagement::BulkNack(
@@ -71,10 +81,13 @@ future<Status> SubscriptionLeaseManagement::BulkNack(
 void SubscriptionLeaseManagement::ExtendLeases(std::vector<std::string>,
                                                std::chrono::seconds) {}
 
+
 void SubscriptionLeaseManagement::OnRead(
     StatusOr<google::pubsub::v1::StreamingPullResponse> const& response) {
-    auto span = internal::MakeSpan("SubscriptionLeaseManagement::OnRead");
-  auto scope = internal::OTelScope(span);  if (!response) {
+  auto span = internal::MakeSpan("SubscriptionLeaseManagement::OnRead");
+  auto scope = internal::OTelScope(span);
+ 
+  if (!response) {
     shutdown_manager_->MarkAsShutdown(__func__, response.status());
     std::unique_lock<std::mutex> lk(mu_);
     // Cancel any existing timers.

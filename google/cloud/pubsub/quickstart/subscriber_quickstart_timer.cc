@@ -24,7 +24,7 @@ int main(int argc, char* argv[]) try {
   std::string const project_id = "alevenb-test";
   std::string const subscription_id = "my-sub";
 
-  auto constexpr kWaitTimeout = std::chrono::seconds(30);
+  auto constexpr kWaitTimeout = std::chrono::seconds(15);
 
   // Create a namespace alias to make the code easier to read.
   namespace pubsub = ::google::cloud::pubsub;
