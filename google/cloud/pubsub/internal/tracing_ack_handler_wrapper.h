@@ -28,11 +28,8 @@ GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
 class TracingAckHandlerWrapper : public pubsub::AckHandler::Impl {
  public:
   explicit TracingAckHandlerWrapper(
-      std::unique_ptr<pubsub::ExactlyOnceAckHandler::Impl> impl)
+      std::unique_ptr<pubsub::AckHandler::Impl> impl)
       : impl_(std::move(impl)) {}
-  TracingAckHandlerWrapper(std::unique_ptr<pubsub::ExactlyOnceAckHandler::Impl> impl,
-                    std::string message_id)
-      : impl_(std::move(impl)), message_id_(std::move(message_id)) {}
   ~TracingAckHandlerWrapper() override = default;
 
   void ack() override;
@@ -40,8 +37,7 @@ class TracingAckHandlerWrapper : public pubsub::AckHandler::Impl {
   std::int32_t delivery_attempt() const override;
 
  private:
-std::unique_ptr<pubsub::ExactlyOnceAckHandler::Impl> impl_;
-  std::string message_id_;
+  std::unique_ptr<pubsub::AckHandler::Impl> impl_;
 };
 
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_END

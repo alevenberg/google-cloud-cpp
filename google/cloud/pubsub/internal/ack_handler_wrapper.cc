@@ -13,8 +13,9 @@
 // limitations under the License.
 
 #include "google/cloud/pubsub/internal/ack_handler_wrapper.h"
-#include "google/cloud/log.h"
+#include "google/cloud/pubsub/subscription.h"
 #include "google/cloud/internal/opentelemetry.h"
+#include "google/cloud/log.h"
 #include <opentelemetry/trace/scope.h>
 
 namespace google {
@@ -23,32 +24,36 @@ namespace pubsub_internal {
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
 
 void AckHandlerWrapper::ack() {
-  auto span = internal::MakeSpan("ack");
-     auto scope = opentelemetry::trace::Scope(span);
-      auto f = impl_->ack();
+  opentelemetry::trace::StartSpanOptions options;
+  opentelemetry::context::Context root_context;
+  // TODO(#13287): Use the constant instead of the string.
+  // Setting a span as a root span was added in OTel v1.13+. It is a no-op for
+  // earlier versions.
+  options.parent = root_context.SetValue(
+      /*opentelemetry::trace::kIsRootSpanKey=*/"is_root_span", true);
+  options.kind = opentelemetry::trace::SpanKind::kClient;
+  auto span = internal::MakeSpan(subscription_.subscription_id() + " settle", options);
+  auto scope = internal::OTelScope(span);
+  auto f = impl_->ack();
   if (message_id_.empty()) return;
   f.then([id = std::move(message_id_)](auto f) {
-    auto status = f.get();
-    if (status.ok()) return;
-    GCP_LOG(WARNING) << "error while trying to ack(), status=" << status
-                     << ", message_id=" << id;
-  }).then([span](auto) {
-    span->End();
-});
+     auto status = f.get();
+     if (status.ok()) return;
+     GCP_LOG(WARNING) << "error while trying to ack(), status=" << status
+                      << ", message_id=" << id;
+   }).then([span = std::move(span)](auto) { span->End(); });
 }
 
 void AckHandlerWrapper::nack() {
-   auto span = internal::MakeSpan("nack");
- auto f = impl_->nack();
+  auto span = internal::MakeSpan("nack");
+  auto f = impl_->nack();
   if (message_id_.empty()) return;
   f.then([id = std::move(message_id_)](auto f) {
-    auto status = f.get();
-    if (status.ok()) return;
-    GCP_LOG(WARNING) << "error while trying to nack(), status=" << status
-                     << ", message_id=" << id;
-  }).then([span = span](auto) {
-    span->End();
-  });
+     auto status = f.get();
+     if (status.ok()) return;
+     GCP_LOG(WARNING) << "error while trying to nack(), status=" << status
+                      << ", message_id=" << id;
+   }).then([span = span](auto) { span->End(); });
 }
 
 std::int32_t AckHandlerWrapper::delivery_attempt() const {

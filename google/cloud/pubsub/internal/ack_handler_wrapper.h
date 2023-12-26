@@ -16,6 +16,7 @@
 #define GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_ACK_HANDLER_WRAPPER_H
 
 #include "google/cloud/pubsub/ack_handler.h"
+#include "google/cloud/pubsub/subscription.h"
 #include "google/cloud/pubsub/exactly_once_ack_handler.h"
 #include "google/cloud/version.h"
 #include <string>
@@ -33,7 +34,10 @@ class AckHandlerWrapper : public pubsub::AckHandler::Impl {
   AckHandlerWrapper(std::unique_ptr<pubsub::ExactlyOnceAckHandler::Impl> impl,
                     std::string message_id)
       : impl_(std::move(impl)), message_id_(std::move(message_id)) {}
-  ~AckHandlerWrapper() override = default;
+  AckHandlerWrapper(std::unique_ptr<pubsub::ExactlyOnceAckHandler::Impl> impl,
+                    std::string message_id, pubsub::Subscription const& subscription)
+      : impl_(std::move(impl)), message_id_(std::move(message_id)), subscription_(subscription) {}
+        ~AckHandlerWrapper() override = default;
 
   void ack() override;
   void nack() override;
@@ -42,6 +46,7 @@ class AckHandlerWrapper : public pubsub::AckHandler::Impl {
  private:
   std::unique_ptr<pubsub::ExactlyOnceAckHandler::Impl> impl_;
   std::string message_id_;
+  pubsub::Subscription subscription_;
 };
 
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_END

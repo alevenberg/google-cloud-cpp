@@ -65,6 +65,7 @@ class SubscriptionSessionImpl
     });
   }
 
+// Somehow TracingAckHandlerWrapper on top that stores the extracted create span.
   static future<Status> Create(
       Options const& opts, CompletionQueue cq,
       std::shared_ptr<SessionShutdownManager> shutdown_manager,
@@ -72,11 +73,12 @@ class SubscriptionSessionImpl
       pubsub::ApplicationCallback application_callback) {
     return Create(
         opts, std::move(cq), std::move(shutdown_manager), std::move(source),
-        [cb = std::move(application_callback)](
+        [cb = std::move(application_callback), opts](
             pubsub::Message m,
             std::unique_ptr<pubsub::ExactlyOnceAckHandler::Impl> h) {
+         auto const& subscription = opts.get<pubsub::SubscriptionOption>();
           auto wrapper =
-              std::make_unique<AckHandlerWrapper>(std::move(h), m.message_id());
+              std::make_unique<AckHandlerWrapper>(std::move(h), m.message_id(), subscription);
           cb(std::move(m), pubsub::AckHandler(std::move(wrapper)));
         });
   }

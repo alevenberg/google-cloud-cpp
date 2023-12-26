@@ -19,13 +19,8 @@
 #include <iostream>
 
 int main(int argc, char* argv[]) try {
-  if (argc != 3) {
-    std::cerr << "Usage: " << argv[0] << " <project-id> <topic-id>\n";
-    return 1;
-  }
-
-  std::string const project_id = argv[1];
-  std::string const topic_id = argv[2];
+  std::string const project_id = "alevenb-test";
+  std::string const topic_id = "my-topic";
 
   // Create a namespace alias to make the code easier to read.
   namespace pubsub = ::google::cloud::pubsub;
@@ -37,13 +32,13 @@ int main(int argc, char* argv[]) try {
 
   // Create a client with OpenTelemetry tracing enabled.
   auto options = gc::Options{}
-                     .set<gc::OpenTelemetryTracingOption>(true);
+                     .set<gc::OpenTelemetryTracingOption>(false);
                     // .set<pubsub::MaxBatchMessagesOption>(1000)  .set<pubsub::MaxHoldTimeOption>(std::chrono::seconds(1));
 
   auto publisher = pubsub::Publisher(pubsub::MakePublisherConnection(
       pubsub::Topic(project_id, topic_id), options));
 
-  int n = 2;
+  int n = 10;
   std::vector<gc::future<void>> ids;
   for (int i = 0; i < n; i++) {
     auto id = publisher.Publish(pubsub::MessageBuilder().SetData("Hi!").Build())
