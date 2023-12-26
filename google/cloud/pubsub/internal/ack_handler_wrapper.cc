@@ -32,7 +32,8 @@ void AckHandlerWrapper::ack() {
   options.parent = root_context.SetValue(
       /*opentelemetry::trace::kIsRootSpanKey=*/"is_root_span", true);
   options.kind = opentelemetry::trace::SpanKind::kClient;
-  auto span = internal::MakeSpan(subscription_.subscription_id() + " settle", options);
+  auto span =
+      internal::MakeSpan(subscription_.subscription_id() + " settle", options);
   auto scope = internal::OTelScope(span);
   auto f = impl_->ack();
   if (message_id_.empty()) return;
@@ -41,7 +42,12 @@ void AckHandlerWrapper::ack() {
      if (status.ok()) return;
      GCP_LOG(WARNING) << "error while trying to ack(), status=" << status
                       << ", message_id=" << id;
-   }).then([span = std::move(span)](auto) { span->End(); });
+   })
+      .then([oc = opentelemetry::context::RuntimeContext::GetCurrent(),
+             span = std::move(span)](auto) {
+        internal::DetachOTelContext(oc);
+        span->End();
+      });
 }
 
 void AckHandlerWrapper::nack() {

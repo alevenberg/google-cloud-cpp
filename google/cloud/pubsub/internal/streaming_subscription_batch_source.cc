@@ -414,18 +414,21 @@ void StreamingSubscriptionBatchSource::ReadLoop() {
 // OnRead
 
 struct TracingMessage {
-  absl::optional<opentelemetry::context::Context> create_span;
-  absl::optional<opentelemetry::context::Context> flow_control;
-  opentelemetry::context::Context subscribe_span;
+  std::string id = "";
+  // absl::optional<opentelemetry::context::Context> create_span= absl::nullopt;
+  // absl::optional<std::shared_ptr<opentelemetry::trace::Span>> flow_control= absl::nullopt;
+  opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> subscribe_span;
 };
 
 void StreamingSubscriptionBatchSource::OnRead(
     absl::optional<google::pubsub::v1::StreamingPullResponse> response) {
   auto span = internal::MakeSpan("StreamingSubscriptionBatchSource::OnRead");
+  // Go through messages
   auto weak = WeakFromThis();
   std::unique_lock<std::mutex> lk(mu_);
   pending_read_ = false;
   auto scope = internal::OTelScope(span);
+  std::vector<TracingMessage> tracing_messages;
   if (response && stream_state_ == StreamState::kActive && !shutdown_) {
     auto update_stream_deadline = false;
     if (response->has_subscription_properties()) {
@@ -434,6 +437,13 @@ void StreamingSubscriptionBatchSource::OnRead(
       if (exactly_once_delivery_enabled_ != enabled) {
         exactly_once_delivery_enabled_ = enabled;
         update_stream_deadline = true;
+      }
+      TracingMessage tr;
+      for (auto const& message : response->received_messages()) {
+        auto subscribe_span = internal::MakeSpan("subscribe");
+        tr.id = message.message().message_id();
+        tr.subscribe_span = subscribe_span;
+        tracing_messages.push_back(std::move(tr));
       }
     }
     lk.unlock();
