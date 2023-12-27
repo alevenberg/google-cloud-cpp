@@ -28,16 +28,20 @@ namespace pubsub_internal {
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
 
 // rename; SubscriptionTracingBatchSource
+// Add them to a list of ack id -> subscribe span
 void TracingSubscriptionBatchSource::Start(BatchCallback callback) {
   auto span = internal::MakeSpan("TracingSubscriptionBatchSource::Start");
-
-  child_->Start(callback);
-  internal::EndSpan(*span);
+  auto scope = internal::OTelScope(span);
+  child_->Start([callback, span = std::move(span)](
+                    StatusOr<google::pubsub::v1::StreamingPullResponse> r) {
+    internal::EndSpan(*span);
+    callback(std::move(r));
+  });
 }
 
 void TracingSubscriptionBatchSource::Shutdown() {
   auto span = internal::MakeSpan("TracingSubscriptionBatchSource::Shutdown");
-    child_->Shutdown();
+  child_->Shutdown();
 
   internal::EndSpan(*span);
 }
