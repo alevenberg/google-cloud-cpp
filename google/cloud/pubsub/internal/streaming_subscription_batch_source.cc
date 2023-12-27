@@ -212,7 +212,7 @@ void StreamingSubscriptionBatchSource::ExtendLeases(
 void StreamingSubscriptionBatchSource::StartStream(
     std::shared_ptr<pubsub::RetryPolicy> retry_policy,
     std::shared_ptr<pubsub::BackoffPolicy> backoff_policy) {
-  auto span = internal::MakeSpan("ExtendLeases::ExtenStartStreamdLeases");
+  auto span = internal::MakeSpan("ExtendLeases::StartStream");
   internal::OptionsSpan options_span(options_);
 
   // Starting a stream is a 4-step process.
