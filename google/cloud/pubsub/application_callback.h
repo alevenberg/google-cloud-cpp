@@ -26,6 +26,7 @@ class Message;
 class AckHandler;
 class ExactlyOnceAckHandler;
 
+// Change to a MessageWrapper
 /**
  * Defines the interface for application-level callbacks.
  *

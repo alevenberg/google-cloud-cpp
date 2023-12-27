@@ -187,7 +187,17 @@ future<Status> StreamingSubscriptionBatchSource::BulkNack(
 
 void StreamingSubscriptionBatchSource::ExtendLeases(
     std::vector<std::string> ack_ids, std::chrono::seconds extension) {
-  auto span = internal::MakeSpan("ExtendLeases::ExtendLeases");
+      
+  opentelemetry::trace::StartSpanOptions options;
+  opentelemetry::context::Context root_context;
+  // TODO(#13287): Use the constant instead of the string.
+  // Setting a span as a root span was added in OTel v1.13+. It is a no-op for
+  // earlier versions.
+  options.parent = root_context.SetValue(
+      /*opentelemetry::trace::kIsRootSpanKey=*/"is_root_span", true);
+  // Go through messages
+
+  auto span = internal::MakeSpan("ExtendLeases::ExtendLeases",options);
   google::pubsub::v1::ModifyAckDeadlineRequest request;
   request.set_subscription(subscription_full_name_);
   request.set_ack_deadline_seconds(
@@ -422,7 +432,15 @@ struct TracingMessage {
 
 void StreamingSubscriptionBatchSource::OnRead(
     absl::optional<google::pubsub::v1::StreamingPullResponse> response) {
-  auto span = internal::MakeSpan("StreamingSubscriptionBatchSource::OnRead");
+        opentelemetry::trace::StartSpanOptions options;
+  opentelemetry::context::Context root_context;
+  // TODO(#13287): Use the constant instead of the string.
+  // Setting a span as a root span was added in OTel v1.13+. It is a no-op for
+  // earlier versions.
+  options.parent = root_context.SetValue(
+      /*opentelemetry::trace::kIsRootSpanKey=*/"is_root_span", true);
+  options.kind = opentelemetry::trace::SpanKind::kClient;
+  auto span = internal::MakeSpan("StreamingSubscriptionBatchSource::OnRead", options);
   // Go through messages
   auto weak = WeakFromThis();
   std::unique_lock<std::mutex> lk(mu_);
