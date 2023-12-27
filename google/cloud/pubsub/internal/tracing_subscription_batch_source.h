@@ -38,15 +38,13 @@ namespace cloud {
 namespace pubsub_internal {
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
 
-class TracingSubscriptionBatchSource
-    : public SubscriptionBatchSource {
+class TracingSubscriptionBatchSource : public SubscriptionBatchSource {
  public:
   explicit TracingSubscriptionBatchSource(
       CompletionQueue cq,
       std::shared_ptr<SessionShutdownManager> shutdown_manager,
-      std::shared_ptr<SubscriberStub> stub, std::string subscription_full_name,
-      std::string client_id, Options opts);
-
+      std::shared_ptr<SubscriptionBatchSource> child_,
+      pubsub::Subscription subscription, std::string client_id, Options opts);
   ~TracingSubscriptionBatchSource() override = default;
 
   void Start(BatchCallback callback) override;
@@ -58,35 +56,12 @@ class TracingSubscriptionBatchSource
   void ExtendLeases(std::vector<std::string> ack_ids,
                     std::chrono::seconds extension) override;
 
-  using AsyncPullStream = google::cloud::AsyncStreamingReadWriteRpc<
-      google::pubsub::v1::StreamingPullRequest,
-      google::pubsub::v1::StreamingPullResponse>;
-
-  enum class StreamState {
-    kNull,
-    kActive,
-    kDisconnecting,
-    kFinishing,
-  };
-
-  // The maximum size for `ModifyAckDeadlineRequest` is 512 KB:
-  //    https://cloud.google.com/pubsub/quotas#resource_limits
-  // Typical ack ids are less than 200 bytes. This value is safe, but there is
-  // no need to over optimize it:
-  // - Google does not charge for these messages
-  // - The value is reached rarely
-  // - The CPU costs saved between 2,048 ids per message vs. the theoretical
-  //   maximum are minimal
-  static int constexpr kMaxAckIdsPerMessage = 2048;
+  std::shared_ptr<SubscriptionBatchSource> const child_;
+  std::shared_ptr<SessionShutdownManager> const shutdown_manager_;
+  pubsub::Subscription const subscription_;
+  std::string const client_id_;
+  Options options_;
 };
-
-std::ostream& operator<<(std::ostream& os,
-                         TracingSubscriptionBatchSource::StreamState s);
-
-/// Split @p request such that each request has at most @p max_ack_ids.
-std::vector<google::pubsub::v1::ModifyAckDeadlineRequest>
-SplitModifyAckDeadline(google::pubsub::v1::ModifyAckDeadlineRequest request,
-                       int max_ack_ids);
 
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_END
 }  // namespace pubsub_internal

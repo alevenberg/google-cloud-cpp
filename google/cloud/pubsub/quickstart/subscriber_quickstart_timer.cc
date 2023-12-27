@@ -25,7 +25,7 @@ int main(int argc, char* argv[]) try {
   std::string const project_id = "alevenb-test";
   std::string const subscription_id = "my-sub";
 
-  auto constexpr kWaitTimeout = std::chrono::seconds(15);
+  auto constexpr kWaitTimeout = std::chrono::seconds(10);
 
   // Create a namespace alias to make the code easier to read.
   namespace pubsub = ::google::cloud::pubsub;
@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) try {
 
   auto publisher = pubsub::Publisher(pubsub::MakePublisherConnection(
       pubsub::Topic(project_id, topic_id),
-      gc::Options{}.set<gc::OpenTelemetryTracingOption>(false)));
+      gc::Options{}.set<gc::OpenTelemetryTracingOption>(true)));
 
   int n = 10;
   std::vector<gc::future<void>> ids;

@@ -44,8 +44,6 @@ void SubscriptionLeaseManagement::Shutdown() {
 
 future<Status> SubscriptionLeaseManagement::AckMessage(
     std::string const& ack_id) {
-  auto span = internal::MakeSpan("SubscriptionLeaseManagement::AckMessage");
-
   std::unique_lock<std::mutex> lk(mu_);
   leases_.erase(ack_id);
   lk.unlock();
