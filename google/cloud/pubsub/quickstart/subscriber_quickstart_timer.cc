@@ -15,6 +15,7 @@
 //! [START pubsub_quickstart_subscriber] [all]
 #include "google/cloud/opentelemetry/configure_basic_tracing.h"
 #include "google/cloud/pubsub/message.h"
+#include "google/cloud/pubsub/publisher.h"
 #include "google/cloud/pubsub/subscriber.h"
 #include "google/cloud/opentelemetry_options.h"
 #include <iostream>
@@ -36,8 +37,7 @@ int main(int argc, char* argv[]) try {
   auto configuration = otel::ConfigureBasicTracing(project);
 
   // Create a client with OpenTelemetry tracing enabled.
-  auto options =
-      gc::Options{}.set<gc::OpenTelemetryTracingOption>(true);
+  auto options = gc::Options{}.set<gc::OpenTelemetryTracingOption>(true);
 
   auto subscriber = pubsub::Subscriber(pubsub::MakeSubscriberConnection(
       pubsub::Subscription(project_id, subscription_id), options));
@@ -47,6 +47,34 @@ int main(int argc, char* argv[]) try {
   // if (!response) throw std::move(response).status();
   // std::cout << "Received message " << response->message << "\n";
   // std::move(response->handler).ack();
+
+  std::string const topic_id = "my-topic";
+
+  // Create a client with OpenTelemetry tracing enabled.
+  // .set<pubsub::MaxBatchMessagesOption>(1000)
+  // .set<pubsub::MaxHoldTimeOption>(std::chrono::seconds(1));
+
+  auto publisher = pubsub::Publisher(pubsub::MakePublisherConnection(
+      pubsub::Topic(project_id, topic_id),
+      gc::Options{}.set<gc::OpenTelemetryTracingOption>(false)));
+
+  int n = 10;
+  std::vector<gc::future<void>> ids;
+  for (int i = 0; i < n; i++) {
+    auto id = publisher.Publish(pubsub::MessageBuilder().SetData("Hi!").Build())
+                  .then([](gc::future<gc::StatusOr<std::string>> f) {
+                    auto status = f.get();
+                    if (!status) {
+                      std::cout << "Error in publish: " << status.status()
+                                << "\n";
+                      return;
+                    }
+                    std::cout << "Sent message with id: (" << *status << ")\n";
+                  });
+    ids.push_back(std::move(id));
+  }
+  // Block until they are actually sent.
+  for (auto& id : ids) id.get();
 
   auto session =
       subscriber.Subscribe([&](pubsub::Message const& m, pubsub::AckHandler h) {
