@@ -44,6 +44,7 @@ void SubscriptionLeaseManagement::Shutdown() {
 
 future<Status> SubscriptionLeaseManagement::AckMessage(
     std::string const& ack_id) {
+  auto span = internal::MakeSpan("SubscriptionLeaseManagement::AckMessage");
   std::unique_lock<std::mutex> lk(mu_);
   leases_.erase(ack_id);
   lk.unlock();
@@ -79,12 +80,11 @@ future<Status> SubscriptionLeaseManagement::BulkNack(
 void SubscriptionLeaseManagement::ExtendLeases(std::vector<std::string>,
                                                std::chrono::seconds) {}
 
-
 void SubscriptionLeaseManagement::OnRead(
     StatusOr<google::pubsub::v1::StreamingPullResponse> const& response) {
   auto span = internal::MakeSpan("SubscriptionLeaseManagement::OnRead");
   auto scope = internal::OTelScope(span);
- 
+
   if (!response) {
     shutdown_manager_->MarkAsShutdown(__func__, response.status());
     std::unique_lock<std::mutex> lk(mu_);

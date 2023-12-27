@@ -27,58 +27,52 @@ namespace cloud {
 namespace pubsub_internal {
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
 
-TracingSubscriptionBatchSource::TracingSubscriptionBatchSource(
-    CompletionQueue cq,
-    std::shared_ptr<SessionShutdownManager> shutdown_manager,
-    std::shared_ptr<SubscriptionBatchSource> child,
-    pubsub::Subscription subscription, std::string client_id, Options opts)
-    : cq_(std::move(cq)),
-      shutdown_manager_(std::move(shutdown_manager)),
-      child_(std::move(child)),
-      subscription_(std::move(subscription)),
-      options_(std::move(opts)) {}
-
+// rename; SubscriptionTracingBatchSource
 void TracingSubscriptionBatchSource::Start(BatchCallback callback) {
   auto span = internal::MakeSpan("TracingSubscriptionBatchSource::Start");
+
+  child_->Start(callback);
   internal::EndSpan(*span);
 }
 
 void TracingSubscriptionBatchSource::Shutdown() {
   auto span = internal::MakeSpan("TracingSubscriptionBatchSource::Shutdown");
+    child_->Shutdown();
+
   internal::EndSpan(*span);
 }
 
-future<Status> StreamingSubscriptionBatchSource::AckMessage(
+future<Status> TracingSubscriptionBatchSource::AckMessage(
     std::string const& ack_id) {
   auto span = internal::MakeSpan("TracingSubscriptionBatchSource::AckMessage");
   auto scope = internal::OTelScope(span);
-  return child->AckMessage(ack_id).then([span = std::move(span)](auto f) {
+  return child_->AckMessage(ack_id).then([span = std::move(span)](auto f) {
     internal::EndSpan(*span);
     return f;
   });
 }
 
-future<Status> StreamingSubscriptionBatchSource::NackMessage(
+future<Status> TracingSubscriptionBatchSource::NackMessage(
     std::string const& ack_id) {
   auto span = internal::MakeSpan("TracingSubscriptionBatchSource::NackMessage");
   auto scope = internal::OTelScope(span);
-  return child->NackMessage(ack_id).then([span = std::move(span)](auto f) {
+  return child_->NackMessage(ack_id).then([span = std::move(span)](auto f) {
     internal::EndSpan(*span);
     return f;
   });
 }
 
-future<Status> StreamingSubscriptionBatchSource::BulkNack(
+future<Status> TracingSubscriptionBatchSource::BulkNack(
     std::vector<std::string> ack_ids) {
   auto span = internal::MakeSpan("TracingSubscriptionBatchSource::BulkNack");
   auto scope = internal::OTelScope(span);
-  return child->NackMessage(ack_id).then([span = std::move(span)](auto f) {
+  return child_->BulkNack(ack_ids).then([span = std::move(span)](auto f) {
     internal::EndSpan(*span);
     return f;
   });
 }
 
-void StreamingSubscriptionBatchSource::ExtendLeases(
+void TracingSubscriptionBatchSource::ExtendLeases(
     std::vector<std::string> ack_ids, std::chrono::seconds extension) {
   opentelemetry::trace::StartSpanOptions options;
   opentelemetry::context::Context root_context;
@@ -90,6 +84,7 @@ void StreamingSubscriptionBatchSource::ExtendLeases(
   // Go through messages
 
   auto span = internal::MakeSpan("ExtendLeases::ExtendLeases", options);
+  child_->ExtendLeases(ack_ids, extension);
   internal::EndSpan(*span);
 }
 

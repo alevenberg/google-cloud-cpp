@@ -111,8 +111,6 @@ add_library(
     internal/batching_publisher_connection.h
     internal/batching_publisher_tracing_connection.cc
     internal/batching_publisher_tracing_connection.h
-    internal/subscriber_tracing_connection.cc
-    internal/subscriber_tracing_connection.h
         internal/blocking_publisher_connection_impl.cc
     internal/blocking_publisher_connection_impl.h
     internal/blocking_publisher_tracing_connection.cc
@@ -215,6 +213,8 @@ add_library(
     internal/subscription_session.h
     internal/tracing_batch_sink.cc
     internal/tracing_batch_sink.h
+    internal/tracing_subscription_batch_source.cc
+    internal/tracing_subscription_batch_source.h
     message.cc
     message.h
     options.cc

@@ -19,8 +19,9 @@
 #include "google/cloud/pubsub/internal/streaming_subscription_batch_source.h"
 #include "google/cloud/pubsub/internal/subscription_lease_management.h"
 #include "google/cloud/pubsub/internal/subscription_message_queue.h"
-#include "google/cloud/log.h"
+#include "google/cloud/pubsub/internal/tracing_subscription_batch_source.h"
 #include "google/cloud/internal/opentelemetry.h"
+#include "google/cloud/log.h"
 
 namespace google {
 namespace cloud {
@@ -65,7 +66,8 @@ class SubscriptionSessionImpl
     });
   }
 
-// Somehow TracingAckHandlerWrapper on top that stores the extracted create span.
+  // Somehow TracingAckHandlerWrapper on top that stores the extracted create
+  // span.
   static future<Status> Create(
       Options const& opts, CompletionQueue cq,
       std::shared_ptr<SessionShutdownManager> shutdown_manager,
@@ -76,9 +78,9 @@ class SubscriptionSessionImpl
         [cb = std::move(application_callback), opts](
             pubsub::Message m,
             std::unique_ptr<pubsub::ExactlyOnceAckHandler::Impl> h) {
-         auto const& subscription = opts.get<pubsub::SubscriptionOption>();
-          auto wrapper =
-              std::make_unique<AckHandlerWrapper>(std::move(h), m.message_id(), subscription);
+          auto const& subscription = opts.get<pubsub::SubscriptionOption>();
+          auto wrapper = std::make_unique<AckHandlerWrapper>(
+              std::move(h), m.message_id(), subscription);
           cb(std::move(m), pubsub::AckHandler(std::move(wrapper)));
         });
   }
@@ -206,9 +208,10 @@ future<Status> CreateSubscriptionSession(
       cq, shutdown_manager, std::move(batch),
       opts.get<pubsub::MaxDeadlineTimeOption>(),
       opts.get<pubsub::MaxDeadlineExtensionOption>());
-
+  auto tracing = TracingSubscriptionBatchSource::Create(
+      shutdown_manager, std::move(lease_management), opts);
   return SubscriptionSessionImpl::Create(opts, cq, std::move(shutdown_manager),
-                                         std::move(lease_management),
+                                         std::move(tracing),
                                          std::move(application_callback));
 }
 
@@ -225,9 +228,10 @@ future<Status> CreateSubscriptionSession(
       cq, shutdown_manager, std::move(batch),
       opts.get<pubsub::MaxDeadlineTimeOption>(),
       opts.get<pubsub::MaxDeadlineExtensionOption>());
-
+  auto tracing = TracingSubscriptionBatchSource::Create(
+      shutdown_manager, std::move(lease_management), opts);
   return SubscriptionSessionImpl::Create(opts, cq, std::move(shutdown_manager),
-                                         std::move(lease_management),
+                                         std::move(tracing),
                                          std::move(application_callback));
 }
 
