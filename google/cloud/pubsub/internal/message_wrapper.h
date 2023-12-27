@@ -12,31 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_TRACING_MESSAGE_H
-#define GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_TRACING_MESSAGE_H
-
-#ifdef GOOGLE_CLOUD_CPP_HAVE_OPENTELEMETRY
+#ifndef GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_MESSAGE_WRAPPER_H
+#define GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_MESSAGE_WRAPPER_H
 
 #include "google/cloud/pubsub/message.h"
-#include "google/cloud/pubsub/interal/message_wrapper.h"
 
 namespace google {
 namespace cloud {
 namespace pubsub_internal {
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
 
-class TracingMessage : public MessageWrapper {
-  absl::optional<opentelemetry::trace::Span> create_span;
-  absl::optional<opentelemetry::trace::Span> flow_control;
-  absl::optional<oopentelemetry::trace::Span> flow_control;
-  opentelemetry::trace::Span subscribe_span;
-};
+class MessageWrapper {};
 
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_END
 }  // namespace pubsub_internal
 }  // namespace cloud
 }  // namespace google
 
-#endif // GOOGLE_CLOUD_CPP_HAVE_OPENTELEMETRY
+#endif  // GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_MESSAGE_WRAPPER_H
 
-#endif // GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_TRACING_MESSAGE_H
+
+// struct TracingMessage {
+//   absl::optional<opentelemetry::context::Context> create_span;
+//   absl::optional<opentelemetry::context::Context> flow_control;
+//   absl::optional<opentelemetry::context::Context> flow_control;
+//   opentelemetry::context::Context subscribe_span;
+// };
