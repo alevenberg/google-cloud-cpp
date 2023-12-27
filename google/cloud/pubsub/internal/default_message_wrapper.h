@@ -23,7 +23,7 @@ namespace cloud {
 namespace pubsub_internal {
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
 
-class DefaultMessage : public MessageWrapper {
+class DefaultMessageWrapper : public MessageWrapper {
     pubsub::Message message_;
 };
 
