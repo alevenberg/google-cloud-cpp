@@ -187,7 +187,6 @@ future<Status> StreamingSubscriptionBatchSource::BulkNack(
 
 void StreamingSubscriptionBatchSource::ExtendLeases(
     std::vector<std::string> ack_ids, std::chrono::seconds extension) {
-      
   opentelemetry::trace::StartSpanOptions options;
   opentelemetry::context::Context root_context;
   // TODO(#13287): Use the constant instead of the string.
@@ -197,7 +196,7 @@ void StreamingSubscriptionBatchSource::ExtendLeases(
       /*opentelemetry::trace::kIsRootSpanKey=*/"is_root_span", true);
   // Go through messages
 
-  auto span = internal::MakeSpan("ExtendLeases::ExtendLeases",options);
+  auto span = internal::MakeSpan("ExtendLeases::ExtendLeases", options);
   google::pubsub::v1::ModifyAckDeadlineRequest request;
   request.set_subscription(subscription_full_name_);
   request.set_ack_deadline_seconds(
@@ -423,30 +422,25 @@ void StreamingSubscriptionBatchSource::ReadLoop() {
 
 // OnRead
 
-struct TracingMessage {
-  std::string id = "";
-  // absl::optional<opentelemetry::context::Context> create_span= absl::nullopt;
-  // absl::optional<std::shared_ptr<opentelemetry::trace::Span>> flow_control= absl::nullopt;
-  opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> subscribe_span;
-};
-
 void StreamingSubscriptionBatchSource::OnRead(
     absl::optional<google::pubsub::v1::StreamingPullResponse> response) {
-        opentelemetry::trace::StartSpanOptions options;
-  opentelemetry::context::Context root_context;
-  // TODO(#13287): Use the constant instead of the string.
-  // Setting a span as a root span was added in OTel v1.13+. It is a no-op for
-  // earlier versions.
-  options.parent = root_context.SetValue(
-      /*opentelemetry::trace::kIsRootSpanKey=*/"is_root_span", true);
+  opentelemetry::trace::StartSpanOptions options;
+  // opentelemetry::context::Context root_context;
+  // // TODO(#13287): Use the constant instead of the string.
+  // // Setting a span as a root span was added in OTel v1.13+. It is a no-op
+  // for
+  // // earlier versions.
+  // options.parent = root_context.SetValue(
+  //     /*opentelemetry::trace::kIsRootSpanKey=*/"is_root_span", true);
   options.kind = opentelemetry::trace::SpanKind::kClient;
-  auto span = internal::MakeSpan("StreamingSubscriptionBatchSource::OnRead", options);
+  auto span =
+      internal::MakeSpan("StreamingSubscriptionBatchSource::OnRead", options);
   // Go through messages
   auto weak = WeakFromThis();
   std::unique_lock<std::mutex> lk(mu_);
   pending_read_ = false;
   auto scope = internal::OTelScope(span);
-  std::vector<TracingMessage> tracing_messages;
+  // std::vector<TracingMessage> tracing_messages;
   if (response && stream_state_ == StreamState::kActive && !shutdown_) {
     auto update_stream_deadline = false;
     if (response->has_subscription_properties()) {
@@ -461,7 +455,7 @@ void StreamingSubscriptionBatchSource::OnRead(
         auto subscribe_span = internal::MakeSpan("subscribe");
         tr.id = message.message().message_id();
         tr.subscribe_span = subscribe_span;
-        tracing_messages.push_back(std::move(tr));
+        tracing_messages_.push_back(std::move(tr));
       }
     }
     lk.unlock();

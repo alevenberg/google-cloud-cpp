@@ -87,11 +87,16 @@ void TracingSubscriptionBatchSource::ExtendLeases(
       /*opentelemetry::trace::kIsRootSpanKey=*/"is_root_span", true);
   // Go through messages
 
-  auto span = internal::MakeSpan("ExtendLeases::ExtendLeases", options);
+  auto span = internal::MakeSpan("TracingSubscriptionBatchSource::ExtendLeases", options);
   child_->ExtendLeases(ack_ids, extension);
   internal::EndSpan(*span);
 }
-
+void TracingSubscriptionBatchSource::OnRead(
+      absl::optional<google::pubsub::v1::StreamingPullResponse> response) {
+     auto span = internal::MakeSpan("TracingSubscriptionBatchSource::OnRead");
+     child_->OnRead(response);
+     internal::EndSpan(*span);   
+}
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_END
 }  // namespace pubsub_internal
 }  // namespace cloud

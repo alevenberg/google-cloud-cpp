@@ -29,8 +29,8 @@ void AckHandlerWrapper::ack() {
   // TODO(#13287): Use the constant instead of the string.
   // Setting a span as a root span was added in OTel v1.13+. It is a no-op for
   // earlier versions.
-  options.parent = root_context.SetValue(
-      /*opentelemetry::trace::kIsRootSpanKey=*/"is_root_span", true);
+  // options.parent = root_context.SetValue(
+      // /*opentelemetry::trace::kIsRootSpanKey=*/"is_root_span", true);
   options.kind = opentelemetry::trace::SpanKind::kClient;
   auto span =
       internal::MakeSpan(subscription_.subscription_id() + " settle", options);

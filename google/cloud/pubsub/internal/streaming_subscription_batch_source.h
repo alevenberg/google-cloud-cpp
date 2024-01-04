@@ -38,6 +38,13 @@ namespace cloud {
 namespace pubsub_internal {
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
 
+struct TracingMessage {
+  std::string id = "";
+  // absl::optional<opentelemetry::context::Context> create_span= absl::nullopt;
+  // absl::optional<std::shared_ptr<opentelemetry::trace::Span>> flow_control= absl::nullopt;
+  opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> subscribe_span;
+};
+
 class StreamingSubscriptionBatchSource
     : public SubscriptionBatchSource,
       public std::enable_shared_from_this<StreamingSubscriptionBatchSource> {
@@ -80,6 +87,8 @@ class StreamingSubscriptionBatchSource
   //   maximum are minimal
   static int constexpr kMaxAckIdsPerMessage = 2048;
 
+  void OnRead(
+      absl::optional<google::pubsub::v1::StreamingPullResponse> response);
  private:
   // C++17 adds weak_from_this(), we cannot use the same name as (1) some
   // versions of the standard library include `weak_from_this()` even with
@@ -111,8 +120,6 @@ class StreamingSubscriptionBatchSource
 
   void ReadLoop();
 
-  void OnRead(
-      absl::optional<google::pubsub::v1::StreamingPullResponse> response);
   void ShutdownStream(std::unique_lock<std::mutex> lk, char const* reason);
   void OnFinish(Status status);
 
@@ -143,7 +150,8 @@ class StreamingSubscriptionBatchSource
   std::shared_ptr<AsyncPullStream> stream_;
   absl::optional<bool> exactly_once_delivery_enabled_;
   std::vector<std::pair<std::string, std::chrono::seconds>> deadlines_queue_;
-};
+  std::vector<TracingMessage> tracing_messages_;
+  };
 
 std::ostream& operator<<(std::ostream& os,
                          StreamingSubscriptionBatchSource::StreamState s);

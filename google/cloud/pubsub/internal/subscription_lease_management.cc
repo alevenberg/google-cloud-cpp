@@ -28,7 +28,7 @@ void SubscriptionLeaseManagement::Start(BatchCallback cb) {
   auto weak = std::weak_ptr<SubscriptionLeaseManagement>(shared_from_this());
   child_->Start(
       [weak, cb](StatusOr<google::pubsub::v1::StreamingPullResponse> r) {
-        if (auto self = weak.lock()) self->OnRead(r);
+        if (auto self = weak.lock()) self->OnRead(absl::make_optional(r.value()));
         cb(std::move(r));
       });
 }
@@ -108,6 +108,34 @@ void SubscriptionLeaseManagement::OnRead(
                     std::chrono::system_clock::now() + kMinimumAckDeadline);
 }
 
+void SubscriptionLeaseManagement::OnRead(
+      absl::optional<google::pubsub::v1::StreamingPullResponse> response) {
+  auto span = internal::MakeSpan("SubscriptionLeaseManagement2::OnRead");
+  auto scope = internal::OTelScope(span);
+
+  if (!response) {
+    shutdown_manager_->MarkAsShutdown(__func__, google::cloud::Status());
+    std::unique_lock<std::mutex> lk(mu_);
+    // Cancel any existing timers.
+    if (refresh_timer_.valid()) refresh_timer_.cancel();
+    return;
+  }
+  std::unique_lock<std::mutex> lk(mu_);
+  auto const now = std::chrono::system_clock::now();
+  auto const estimated_server_deadline = now + std::chrono::seconds(10);
+  auto const handling_deadline = now + max_deadline_time_;
+  for (auto const& rm : response->received_messages()) {
+    leases_.emplace(rm.ack_id(),
+                    LeaseStatus{estimated_server_deadline, handling_deadline});
+  }
+  // Setup a timer to refresh the message leases. We do not want to immediately
+  // refresh them because there is a good chance they will be handled before
+  // the minimum lease time, and it seems wasteful to refresh the lease just to
+  // quickly turnaround and ack or nack the message.
+  StartRefreshTimer(std::move(lk),
+                    std::chrono::system_clock::now() + kMinimumAckDeadline);
+      }
+
 void SubscriptionLeaseManagement::RefreshMessageLeases(
     std::unique_lock<std::mutex> lk) {
   using seconds = std::chrono::seconds;
@@ -175,6 +203,8 @@ void SubscriptionLeaseManagement::NackAll(std::unique_lock<std::mutex> lk) {
   lk.unlock();
   BulkNack(std::move(ack_ids));
 }
+
+
 
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_END
 }  // namespace pubsub_internal

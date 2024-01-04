@@ -60,7 +60,8 @@ class TracingSubscriptionBatchSource : public SubscriptionBatchSource {
   future<Status> BulkNack(std::vector<std::string> ack_ids) override;
   void ExtendLeases(std::vector<std::string> ack_ids,
                     std::chrono::seconds extension) override;
-
+ void OnRead(
+      absl::optional<google::pubsub::v1::StreamingPullResponse> response) override;
  private:
   explicit TracingSubscriptionBatchSource(
       std::shared_ptr<SessionShutdownManager> shutdown_manager,
@@ -69,7 +70,8 @@ class TracingSubscriptionBatchSource : public SubscriptionBatchSource {
       : shutdown_manager_(std::move(shutdown_manager)),
         child_(std::move(child)),
         options_(std::move(opts)) {}
-
+ // Store ack id to message span.
+ 
   std::shared_ptr<SessionShutdownManager> const shutdown_manager_;
   std::shared_ptr<SubscriptionBatchSource> const child_;
   Options options_;
