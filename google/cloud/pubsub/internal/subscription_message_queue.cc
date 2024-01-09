@@ -14,7 +14,9 @@
 
 #include "google/cloud/pubsub/internal/subscription_message_queue.h"
 #include "google/cloud/pubsub/internal/default_batch_callback.h"
+#include "google/cloud/pubsub/internal/tracing_batch_callback.h"
 #include "google/cloud/pubsub/message.h"
+#include "google/cloud/opentelemetry_options.h"
 #include <algorithm>
 
 namespace google {
@@ -27,11 +29,18 @@ void SubscriptionMessageQueue::Start(MessageCallback cb) {
   if (callback_) return;
   callback_ = std::move(cb);
   lk.unlock();
+  auto const& current = internal::CurrentOptions();
+  auto otel = current.get<OpenTelemetryTracingOption>();
   auto weak = std::weak_ptr<SubscriptionMessageQueue>(shared_from_this());
-  source_->Start(std::make_unique<DefaultBatchCallback>(
-      [weak](StatusOr<google::pubsub::v1::StreamingPullResponse> r) {
-        if (auto self = weak.lock()) self->OnRead(std::move(r));
-      }));
+  std::unique_ptr<BatchCallback> callback =
+      std::make_unique<DefaultBatchCallback>(
+          [weak](StatusOr<google::pubsub::v1::StreamingPullResponse> r) {
+            if (auto self = weak.lock()) self->OnRead(std::move(r));
+          });
+  if (otel) {
+    callback = std::make_unique<TracingBatchCallback>(std::move(callback));
+  }
+  source_->Start(std::move(callback));
 }
 
 void SubscriptionMessageQueue::Shutdown() {

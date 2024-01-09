@@ -16,8 +16,15 @@
 #define GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_TRACING_BATCH_CALLBACK_H
 
 #include "google/cloud/pubsub/internal/batch_callback.h"
+#include "google/cloud/pubsub/internal/message_propagator.h"
+#include "google/cloud/pubsub/options.h"
 #include "google/cloud/pubsub/version.h"
+#include "google/cloud/internal/opentelemetry.h"
 #include "google/cloud/status_or.h"
+#include "opentelemetry/context/propagation/text_map_propagator.h"
+#include "opentelemetry/trace/propagation/http_trace_context.h"
+#include "opentelemetry/trace/semantic_conventions.h"
+#include "opentelemetry/trace/span_startoptions.h"
 #include <google/pubsub/v1/pubsub.pb.h>
 
 namespace google {
@@ -25,21 +32,77 @@ namespace cloud {
 namespace pubsub_internal {
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
 
+namespace {
+opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> StartSubscribeSpan(
+    google::pubsub::v1::ReceivedMessage const& message,
+    std::shared_ptr<
+        opentelemetry::context::propagation::TextMapPropagator> const&
+        propagator) {
+  auto const& current = internal::CurrentOptions();
+  auto const& subscription = current.get<pubsub::SubscriptionOption>();
+  namespace sc = opentelemetry::trace::SemanticConventions;
+  opentelemetry::trace::StartSpanOptions options;
+  options.kind = opentelemetry::trace::SpanKind::kConsumer;
+  auto m = pubsub_internal::FromProto(std::move(message.message()));
+  auto context = ExtractTraceContext(m, *propagator);
+  auto producer_span_context =
+      opentelemetry::trace::GetSpan(context)->GetContext();
+  if (producer_span_context.IsSampled() && producer_span_context.IsValid()) {
+    options.parent = producer_span_context;
+  }
+  auto span = internal::MakeSpan(
+      subscription.subscription_id() + " subscribe",
+      {{sc::kMessagingSystem, "gcp_pubsub"},
+       {sc::kCodeFunction, "pubsub::SubscriberConnection::Subscribe"},
+       {sc::kMessagingDestinationTemplate, subscription.FullName()},
+       {sc::kMessagingMessageId, m.message_id()},
+       {/*sc::kMessagingMessageEnvelopeSize=*/"messaging.message.envelope.size",
+        static_cast<std::int64_t>(MessageSize(m))}},
+      options);
+
+  if (!message.message().ordering_key().empty()) {
+    span->SetAttribute("messaging.gcp_pubsub.message.ordering_key",
+                       message.message().ordering_key());
+  }
+  return span;
+}
+}  // namespace
+
 /**
  * Tracing implementation.
  * */
 class TracingBatchCallback : public BatchCallback {
  public:
   explicit TracingBatchCallback(std::unique_ptr<BatchCallback> child)
-      : child_(child) {}
+      : child_(std::move(child)),
+        propagator_(std::make_shared<
+                    opentelemetry::trace::propagation::HttpTraceContext>()) {}
   ~TracingBatchCallback() override = default;
 
   void operator()(
       StatusOr<google::pubsub::v1::StreamingPullResponse> response) override {
+    if (response) {
+      for (auto const& message : response->received_messages()) {
+        auto subscribe_span = StartSubscribeSpan(message, propagator_);
+        auto scope = internal::OTelScope(subscribe_span);
+        message_id_to_subscribe_span_[message.message().message_id()] =
+            subscribe_span;
+        ack_id_to_subscribe_span_[message.ack_id()] = subscribe_span;
+      }
+    }
+
     child_->operator()(std::move(response));
   };
 
   std::unique_ptr<BatchCallback> child_;
+  std::shared_ptr<opentelemetry::context::propagation::TextMapPropagator>
+      propagator_;
+  std::unordered_map<
+      std::string, opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span>>
+      message_id_to_subscribe_span_;
+  std::unordered_map<
+      std::string, opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span>>
+      ack_id_to_subscribe_span_;
 };
 
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_END
