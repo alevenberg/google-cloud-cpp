@@ -68,7 +68,8 @@ StreamingSubscriptionBatchSource::StreamingSubscriptionBatchSource(
       min_deadline_time_(options_.get<pubsub::MinDeadlineExtensionOption>()),
       max_deadline_time_(options_.get<pubsub::MaxDeadlineTimeOption>()) {}
 
-void StreamingSubscriptionBatchSource::Start(BatchCallback callback) {
+void StreamingSubscriptionBatchSource::Start(
+    std::unique_ptr<BatchCallback> callback) {
   std::unique_lock<std::mutex> lk(mu_);
   if (callback_) return;
   callback_ = std::move(callback);
@@ -354,7 +355,7 @@ void StreamingSubscriptionBatchSource::OnBackoff(RetryLoopState rs,
 void StreamingSubscriptionBatchSource::OnRetryFailure(Status status) {
   if (shutdown_manager_->FinishedOperation("stream")) return;
   shutdown_manager_->MarkAsShutdown(__func__, status);
-  callback_(std::move(status));
+  callback_->operator()(std::move(status));
 }
 
 void StreamingSubscriptionBatchSource::ReadLoop() {
@@ -387,7 +388,7 @@ void StreamingSubscriptionBatchSource::OnRead(
       }
     }
     lk.unlock();
-    callback_(*std::move(response));
+    callback_->operator()(*std::move(response));
     cq_.RunAsync([weak, update_stream_deadline] {
       auto self = weak.lock();
       if (!self) return;

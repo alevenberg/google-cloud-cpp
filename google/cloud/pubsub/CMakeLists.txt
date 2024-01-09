@@ -105,6 +105,8 @@ add_library(
     exactly_once_ack_handler.h
     internal/ack_handler_wrapper.cc
     internal/ack_handler_wrapper.h
+    internal/batch_callback.h
+    internal/batch_callback_wrapper.h
     internal/batch_sink.h
     internal/batching_publisher_connection.cc
     internal/batching_publisher_connection.h
@@ -117,6 +119,7 @@ add_library(
     internal/containing_publisher_connection.h
     internal/create_channel.cc
     internal/create_channel.h
+    internal/default_batch_callback.h
     internal/default_batch_sink.cc
     internal/default_batch_sink.h
     internal/default_pull_ack_handler.cc
@@ -215,6 +218,7 @@ add_library(
     internal/subscription_message_source.h
     internal/subscription_session.cc
     internal/subscription_session.h
+    internal/tracing_batch_callback.h
     internal/tracing_batch_sink.cc
     internal/tracing_batch_sink.h
     internal/tracing_helpers.cc

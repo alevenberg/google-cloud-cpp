@@ -50,7 +50,7 @@ class StreamingSubscriptionBatchSource
 
   ~StreamingSubscriptionBatchSource() override = default;
 
-  void Start(BatchCallback callback) override;
+  void Start(std::unique_ptr<BatchCallback> callback) override;
 
   void Shutdown() override;
   future<Status> AckMessage(std::string const& ack_id) override;
@@ -108,9 +108,7 @@ class StreamingSubscriptionBatchSource
   void OnInitialFinish(RetryLoopState rs, Status status);
   void OnBackoff(RetryLoopState rs, Status status);
   void OnRetryFailure(Status status);
-
   void ReadLoop();
-
   void OnRead(
       absl::optional<google::pubsub::v1::StreamingPullResponse> response);
   void ShutdownStream(std::unique_lock<std::mutex> lk, char const* reason);
@@ -134,7 +132,7 @@ class StreamingSubscriptionBatchSource
   std::chrono::seconds const max_deadline_time_;
 
   std::mutex mu_;
-  BatchCallback callback_;
+  std::unique_ptr<BatchCallback> callback_;
   StreamState stream_state_ = StreamState::kNull;
   bool shutdown_ = false;
   bool pending_write_ = false;
