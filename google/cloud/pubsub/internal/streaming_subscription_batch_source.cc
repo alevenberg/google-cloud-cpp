@@ -18,6 +18,7 @@
 #include "google/cloud/internal/async_retry_loop.h"
 #include "google/cloud/internal/url_encode.h"
 #include "google/cloud/log.h"
+#include "google/cloud/status.h"
 #include <iterator>
 #include <ostream>
 
@@ -291,7 +292,8 @@ void StreamingSubscriptionBatchSource::OnInitialRead(
   lk.unlock();
   auto const scheduled =
       shutdown_manager_->StartOperation(__func__, "read", [&] {
-        OnRead(std::move(response));
+        if (response) OnRead(std::move(response.value()));
+        OnRead(Status(StatusCode::kInternal, "no response"));
         shutdown_manager_->FinishedOperation("read");
       });
   if (!scheduled) {
@@ -367,12 +369,16 @@ void StreamingSubscriptionBatchSource::ReadLoop() {
   using ResponseType =
       absl::optional<google::pubsub::v1::StreamingPullResponse>;
   stream->Read().then([weak, stream](future<ResponseType> f) {
-    if (auto self = weak.lock()) self->OnRead(f.get());
+    if (auto self = weak.lock()) {
+      auto v = f.get();
+      if (v) self->OnRead(*v);
+      self->OnRead(Status(StatusCode::kInternal, "no response"));
+    }
   });
 }
 
 void StreamingSubscriptionBatchSource::OnRead(
-    absl::optional<google::pubsub::v1::StreamingPullResponse> response) {
+    StatusOr<google::pubsub::v1::StreamingPullResponse> const& response) {
   auto weak = WeakFromThis();
   std::unique_lock<std::mutex> lk(mu_);
   pending_read_ = false;

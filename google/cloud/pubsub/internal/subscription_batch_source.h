@@ -81,6 +81,13 @@ class SubscriptionBatchSource {
    */
   virtual void ExtendLeases(std::vector<std::string> ack_ids,
                             std::chrono::seconds extension) = 0;
+
+ /**
+  * On each read from the stream, process the @p response.
+ */
+  virtual
+      void OnRead(
+    StatusOr<google::pubsub::v1::StreamingPullResponse> const& response) = 0;
 };
 
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_END

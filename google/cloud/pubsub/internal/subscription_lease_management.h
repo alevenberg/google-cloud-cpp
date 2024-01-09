@@ -57,6 +57,9 @@ class SubscriptionLeaseManagement
   void ExtendLeases(std::vector<std::string> ack_ids,
                     std::chrono::seconds extension) override;
 
+  void OnRead(
+      StatusOr<google::pubsub::v1::StreamingPullResponse> const& response) override;
+
  private:
   SubscriptionLeaseManagement(
       google::cloud::CompletionQueue cq,
@@ -69,9 +72,6 @@ class SubscriptionLeaseManagement
         shutdown_manager_(std::move(shutdown_manager)),
         max_deadline_time_(max_deadline_time),
         max_deadline_extension_(max_deadline_extension) {}
-
-  void OnRead(
-      StatusOr<google::pubsub::v1::StreamingPullResponse> const& response);
 
   /// If needed asynchronous update the message leases in the server.
   void RefreshMessageLeases(std::unique_lock<std::mutex> lk);

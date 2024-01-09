@@ -80,6 +80,9 @@ class StreamingSubscriptionBatchSource
   //   maximum are minimal
   static int constexpr kMaxAckIdsPerMessage = 2048;
 
+  void OnRead(
+      StatusOr<google::pubsub::v1::StreamingPullResponse> const& response) override;
+
  private:
   // C++17 adds weak_from_this(), we cannot use the same name as (1) some
   // versions of the standard library include `weak_from_this()` even with
@@ -111,8 +114,6 @@ class StreamingSubscriptionBatchSource
 
   void ReadLoop();
 
-  void OnRead(
-      absl::optional<google::pubsub::v1::StreamingPullResponse> response);
   void ShutdownStream(std::unique_lock<std::mutex> lk, char const* reason);
   void OnFinish(Status status);
 
