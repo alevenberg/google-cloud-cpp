@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_BATCH_CALLBACK_H
-#define GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_BATCH_CALLBACK_H
+#ifndef GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_MESSAGE_CALLBACK_H
+#define GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_MESSAGE_CALLBACK_H
 
+#include "google/cloud/pubsub/exactly_once_ack_handler.h"
 #include "google/cloud/pubsub/message.h"
 #include "google/cloud/pubsub/version.h"
 #include "google/cloud/completion_queue.h"
@@ -29,35 +30,21 @@ namespace pubsub_internal {
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
 
 /**
- * Define the interface to receive message batches from Cloud Pub/Sub.
+ * Define the interface to receive a single message from Cloud Pub/Sub.
  */
-class BatchCallback {
+class MessageCallback {
  public:
-  virtual ~BatchCallback() = default;
+  virtual ~MessageCallback() = default;
 
   virtual void operator()(
-      StatusOr<google::pubsub::v1::StreamingPullResponse> response) = 0;
- // No-op if DNE
- // Struct NoopSubscribeData() TracingSubscribeData()
-   // Add a GetSpan();
- // if we want to wrap the ack/nacks with spans here return a result.
- // Add the result attribute for the corresponding span
-  // Add a function to add the ack event
-  // void AckMessage(std::string const& ack_id)
-
-  // Add a function to add the nack event
-  // void NackMessage(std::string const& ack_id)
-
- // Add a function to add bulk nack event
-  // void BulkNack(std::vector<std::string> ack_ids) 
-   
-  // Add a function to add the extennd event
-  // void ExtendLeases(std::vector<std::string> ack_ids, std::chrono::seconds extension)
-  };
+      pubsub::Message,
+      std::unique_ptr<pubsub::ExactlyOnceAckHandler::Impl>) = 0;
+  virtual void operator()(google::pubsub::v1::ReceivedMessage) = 0;
+};
 
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_END
 }  // namespace pubsub_internal
 }  // namespace cloud
 }  // namespace google
 
-#endif  // GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_BATCH_CALLBACK_H
+#endif  // GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_MESSAGE_CALLBACK_H

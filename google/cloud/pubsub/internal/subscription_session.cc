@@ -19,7 +19,9 @@
 #include "google/cloud/pubsub/internal/streaming_subscription_batch_source.h"
 #include "google/cloud/pubsub/internal/subscription_lease_management.h"
 #include "google/cloud/pubsub/internal/subscription_message_queue.h"
+#include "google/cloud/pubsub/internal/tracing_subscription_message_queue.h"
 #include "google/cloud/log.h"
+#include "google/cloud/opentelemetry_options.h"
 
 namespace google {
 namespace cloud {
@@ -36,8 +38,12 @@ class SubscriptionSessionImpl
       Options const& opts, CompletionQueue cq,
       std::shared_ptr<SessionShutdownManager> shutdown_manager,
       std::shared_ptr<SubscriptionBatchSource> source, Callback callback) {
-    auto queue =
+    bool otel_enabled = opts.get<OpenTelemetryTracingOption>();
+    std::shared_ptr<SubscriptionMessageSource> queue =
         SubscriptionMessageQueue::Create(shutdown_manager, std::move(source));
+    if (otel_enabled) {
+      queue = std::make_shared<TracingSubscriptionMessageQueue>(std::move(queue));
+    }
     auto concurrency_control = SubscriptionConcurrencyControl::Create(
         cq, shutdown_manager, std::move(queue),
         opts.get<pubsub::MaxConcurrencyOption>());

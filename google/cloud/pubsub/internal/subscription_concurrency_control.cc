@@ -14,7 +14,11 @@
 
 #include "google/cloud/pubsub/internal/subscription_concurrency_control.h"
 #include "google/cloud/pubsub/exactly_once_ack_handler.h"
+#include "google/cloud/pubsub/internal/default_message_callback.h"
+#include "google/cloud/pubsub/internal/tracing_message_callback.h"
+#include "google/cloud/pubsub/options.h"
 #include "google/cloud/log.h"
+#include "google/cloud/opentelemetry_options.h"
 
 namespace google {
 namespace cloud {
@@ -55,9 +59,19 @@ void SubscriptionConcurrencyControl::Start(Callback cb) {
   std::unique_lock<std::mutex> lk(mu_);
   if (callback_) return;
   callback_ = std::move(cb);
-  source_->Start([w = WeakFromThis()](google::pubsub::v1::ReceivedMessage r) {
-    if (auto self = w.lock()) self->OnMessage(std::move(r));
-  });
+  auto const& current = internal::CurrentOptions();
+  auto otel = current.get<OpenTelemetryTracingOption>();
+  std::unique_ptr<MessageCallback> callback =
+      std::make_unique<DefaultMessageCallback>(
+          [w = WeakFromThis()](google::pubsub::v1::ReceivedMessage r) {
+            if (auto self = w.lock()) self->OnMessage(std::move(r));
+          });
+  if (otel) {
+    // Add a call to source to store the callback?
+    // Then call ->GetSubscribeSpan(std::string const& message_id);
+    callback = std::make_unique<TracingMessageCallback>(std::move(callback));
+  }
+  source_->Start(std::move(callback));
   if (total_messages() >= max_concurrency_) return;
   auto const read_count = max_concurrency_ - total_messages();
   messages_requested_ = read_count;

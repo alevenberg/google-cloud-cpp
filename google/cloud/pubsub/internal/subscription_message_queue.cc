@@ -24,7 +24,7 @@ namespace cloud {
 namespace pubsub_internal {
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
 
-void SubscriptionMessageQueue::Start(MessageCallback cb) {
+void SubscriptionMessageQueue::Start(std::unique_ptr<MessageCallback> cb) {
   std::unique_lock<std::mutex> lk(mu_);
   if (callback_) return;
   callback_ = std::move(cb);
@@ -40,6 +40,7 @@ void SubscriptionMessageQueue::Start(MessageCallback cb) {
   if (otel) {
     callback = std::make_unique<TracingBatchCallback>(std::move(callback));
   }
+  // Store subscribe span here?
   source_->Start(std::move(callback));
 }
 
@@ -156,7 +157,7 @@ void SubscriptionMessageQueue::DrainQueue(std::unique_lock<std::mutex> lk) {
     // Don't hold a lock during the callback, as the callee may call `Read()`
     // or something similar.
     lk.unlock();
-    callback_(std::move(m));
+    callback_->operator()(std::move(m));
     lk.lock();
   }
 }

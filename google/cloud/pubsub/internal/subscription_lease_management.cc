@@ -111,6 +111,7 @@ void SubscriptionLeaseManagement::RefreshMessageLeases(
   for (auto const& kv : leases_) {
     // This message lease cannot be extended any further, and we do not want to
     // send an extension of 0 seconds because that is a nack.
+    // This tells us the message's deadline has expired.
     if (kv.second.handling_deadline < now + seconds(1)) continue;
     auto const message_extension =
         std::chrono::duration_cast<seconds>(kv.second.handling_deadline - now);

@@ -52,12 +52,16 @@ opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> StartSubscribeSpan(
   }
   auto span = internal::MakeSpan(
       subscription.subscription_id() + " subscribe",
-      {{sc::kMessagingSystem, "gcp_pubsub"},
-       {sc::kCodeFunction, "pubsub::SubscriberConnection::Subscribe"},
-       {sc::kMessagingDestinationTemplate, subscription.FullName()},
-       {sc::kMessagingMessageId, m.message_id()},
-       {/*sc::kMessagingMessageEnvelopeSize=*/"messaging.message.envelope.size",
-        static_cast<std::int64_t>(MessageSize(m))}},
+      {
+          {sc::kMessagingSystem, "gcp_pubsub"},
+          {sc::kCodeFunction, "pubsub::SubscriberConnection::Subscribe"},
+          {sc::kMessagingDestinationTemplate, subscription.FullName()},
+          {sc::kMessagingMessageId, m.message_id()},
+          {/*sc::kMessagingMessageEnvelopeSize=*/"messaging.message.envelope."
+                                                 "size",
+           static_cast<std::int64_t>(MessageSize(m))},
+          {"messaging.gcp_pubsub.message.ack_id", message.ack_id()},
+      },
       options);
 
   if (!message.message().ordering_key().empty()) {
@@ -85,24 +89,28 @@ class TracingBatchCallback : public BatchCallback {
       for (auto const& message : response->received_messages()) {
         auto subscribe_span = StartSubscribeSpan(message, propagator_);
         auto scope = internal::OTelScope(subscribe_span);
-        message_id_to_subscribe_span_[message.message().message_id()] =
+        message_id_by_subscribe_span_[message.message().message_id()] =
             subscribe_span;
-        ack_id_to_subscribe_span_[message.ack_id()] = subscribe_span;
+        ack_id_by_subscribe_span_[message.ack_id()] = subscribe_span;
       }
     }
 
     child_->operator()(std::move(response));
   };
 
+  // opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span>
+  // GetSubscribeDataFromAckId(std::string ack_id);
+  // opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span>
+  // GetSubscribeDataFromMessageId(std::string message_id);
   std::unique_ptr<BatchCallback> child_;
   std::shared_ptr<opentelemetry::context::propagation::TextMapPropagator>
       propagator_;
   std::unordered_map<
       std::string, opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span>>
-      message_id_to_subscribe_span_;
+      message_id_by_subscribe_span_;
   std::unordered_map<
       std::string, opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span>>
-      ack_id_to_subscribe_span_;
+      ack_id_by_subscribe_span_;
 };
 
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_END

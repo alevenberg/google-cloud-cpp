@@ -17,6 +17,7 @@
 
 #include "google/cloud/pubsub/exactly_once_ack_handler.h"
 #include "google/cloud/pubsub/internal/session_shutdown_manager.h"
+#include "google/cloud/pubsub/internal/subscription_concurrency_control_source.h"
 #include "google/cloud/pubsub/internal/subscription_message_source.h"
 #include "google/cloud/pubsub/message.h"
 #include "google/cloud/pubsub/version.h"
@@ -33,7 +34,8 @@ using Callback = std::function<void(
     pubsub::Message, std::unique_ptr<pubsub::ExactlyOnceAckHandler::Impl>)>;
 
 class SubscriptionConcurrencyControl
-    : public std::enable_shared_from_this<SubscriptionConcurrencyControl> {
+    : public SubscriptionConcurrencyControlSource,
+      public std::enable_shared_from_this<SubscriptionConcurrencyControl> {
  public:
   static std::shared_ptr<SubscriptionConcurrencyControl> Create(
       google::cloud::CompletionQueue cq,
@@ -46,10 +48,10 @@ class SubscriptionConcurrencyControl
                                            std::move(source), max_concurrency));
   }
 
-  void Start(Callback);
-  void Shutdown();
-  future<Status> AckMessage(std::string const& ack_id);
-  future<Status> NackMessage(std::string const& ack_id);
+  void Start(Callback) override;
+  void Shutdown() override;
+  future<Status> AckMessage(std::string const& ack_id) override;
+  future<Status> NackMessage(std::string const& ack_id) override;
 
  private:
   SubscriptionConcurrencyControl(

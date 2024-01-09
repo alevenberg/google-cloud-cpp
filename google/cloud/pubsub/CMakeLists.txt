@@ -122,6 +122,7 @@ add_library(
     internal/default_batch_callback.h
     internal/default_batch_sink.cc
     internal/default_batch_sink.h
+    internal/default_message_callback.h
     internal/default_pull_ack_handler.cc
     internal/default_pull_ack_handler.h
     internal/default_pull_lease_manager.cc
@@ -136,6 +137,7 @@ add_library(
     internal/flow_controlled_publisher_connection.h
     internal/flow_controlled_publisher_tracing_connection.cc
     internal/flow_controlled_publisher_tracing_connection.h
+    internal/message_callback.h
     internal/message_carrier.cc
     internal/message_carrier.h
     internal/message_propagator.cc
@@ -211,6 +213,7 @@ add_library(
     internal/subscription_batch_source.h
     internal/subscription_concurrency_control.cc
     internal/subscription_concurrency_control.h
+    internal/subscription_concurrency_control_source.h
     internal/subscription_lease_management.cc
     internal/subscription_lease_management.h
     internal/subscription_message_queue.cc
@@ -223,10 +226,12 @@ add_library(
     internal/tracing_batch_sink.h
     internal/tracing_helpers.cc
     internal/tracing_helpers.h
+    internal/tracing_message_callback.h
     internal/tracing_pull_ack_handler.cc
     internal/tracing_pull_ack_handler.h
     internal/tracing_pull_lease_manager.cc
     internal/tracing_pull_lease_manager.h
+    internal/tracing_subscription_message_queue.h
     message.cc
     message.h
     options.cc
