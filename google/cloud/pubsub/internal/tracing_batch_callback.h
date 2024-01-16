@@ -117,6 +117,36 @@ class TracingBatchCallback : public BatchCallback {
       }
     }
   }
+
+    void NackMessage(std::string const& ack_id) override {
+    std::lock_guard<std::mutex> lk(mu_);
+    {
+      if (ack_id_by_subscribe_span_.find(ack_id) !=
+          ack_id_by_subscribe_span_.end()) {
+        auto subscribe_span = ack_id_by_subscribe_span_[ack_id];
+        subscribe_span->AddEvent("nack message");
+        ack_id_by_subscribe_span_.erase(ack_id);
+        subscribe_span->End();
+      }
+    }
+  }
+   void BulkNack(std::vector<std::string> ack_ids) override {
+ for (auto const& ack_id : ack_ids) {
+  NackMessage(ack_id);
+ } 
+   }
+     void ExtendLeases(std::vector<std::string> ack_ids, std::chrono::seconds extension)  override {  
+      for (auto const& ack_id : ack_ids) {
+    std::lock_guard<std::mutex> lk(mu_);
+    {
+      if (ack_id_by_subscribe_span_.find(ack_id) !=
+          ack_id_by_subscribe_span_.end()) {
+        auto subscribe_span = ack_id_by_subscribe_span_[ack_id];
+        subscribe_span->AddEvent("extend lease");
+      }
+    }
+ }  
+     } 
   // opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span>
   // GetSubscribeDataFromAckId(std::string ack_id);
   // opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span>

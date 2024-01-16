@@ -43,6 +43,9 @@ class DefaultBatchCallback : public BatchCallback {
   };
 
 void AckMessage(std::string const& ack_id) override {};
+void NackMessage(std::string const& ack_id) override {};
+ void BulkNack(std::vector<std::string> ack_ids) override {}; 
+  void ExtendLeases(std::vector<std::string> ack_ids, std::chrono::seconds extension)  override {  } 
 
  private:
   Callback callback_;

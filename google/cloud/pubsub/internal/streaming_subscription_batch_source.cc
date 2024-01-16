@@ -117,7 +117,8 @@ future<Status> StreamingSubscriptionBatchSource::AckMessage(
 
 future<Status> StreamingSubscriptionBatchSource::NackMessage(
     std::string const& ack_id) {
-  internal::OptionsSpan span(options_);
+   callback_->NackMessage(ack_id);
+    internal::OptionsSpan span(options_);
   google::pubsub::v1::ModifyAckDeadlineRequest request;
   request.set_subscription(subscription_full_name_);
   *request.add_ack_ids() = ack_id;
@@ -142,7 +143,8 @@ future<Status> StreamingSubscriptionBatchSource::NackMessage(
 
 future<Status> StreamingSubscriptionBatchSource::BulkNack(
     std::vector<std::string> ack_ids) {
-  internal::OptionsSpan span(options_);
+    callback_->BulkNack(ack_ids);
+ internal::OptionsSpan span(options_);
 
   google::pubsub::v1::ModifyAckDeadlineRequest request;
   request.set_subscription(subscription_full_name_);
@@ -167,7 +169,7 @@ future<Status> StreamingSubscriptionBatchSource::BulkNack(
 
 void StreamingSubscriptionBatchSource::ExtendLeases(
     std::vector<std::string> ack_ids, std::chrono::seconds extension) {
-  google::pubsub::v1::ModifyAckDeadlineRequest request;
+    callback_->ExtendLeases(ack_ids, extension);  google::pubsub::v1::ModifyAckDeadlineRequest request;
   request.set_subscription(subscription_full_name_);
   request.set_ack_deadline_seconds(
       static_cast<std::int32_t>(extension.count()));

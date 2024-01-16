@@ -46,13 +46,13 @@ class BatchCallback {
   virtual void AckMessage(std::string const& ack_id) = 0;
 
   // Add a function to add the nack event
-  // void NackMessage(std::string const& ack_id)
+  virtual void NackMessage(std::string const& ack_id) = 0;
 
  // Add a function to add bulk nack event
-  // void BulkNack(std::vector<std::string> ack_ids) 
+ virtual void BulkNack(std::vector<std::string> ack_ids)  = 0; 
    
   // Add a function to add the extennd event
-  // void ExtendLeases(std::vector<std::string> ack_ids, std::chrono::seconds extension)
+ virtual void ExtendLeases(std::vector<std::string> ack_ids, std::chrono::seconds extension) = 0;
   };
 
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_END
