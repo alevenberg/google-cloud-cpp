@@ -50,7 +50,7 @@ class SubscriptionLeaseManagement
             max_deadline_time, max_deadline_extension));
   }
 
-  void Start(std::unique_ptr<BatchCallback> cb) override;
+  void Start(std::shared_ptr<BatchCallback> cb) override;
   void Shutdown() override;
   future<Status> AckMessage(std::string const& ack_id) override;
   future<Status> NackMessage(std::string const& ack_id) override;

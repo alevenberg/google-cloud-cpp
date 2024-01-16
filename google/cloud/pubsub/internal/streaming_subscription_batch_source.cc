@@ -69,7 +69,7 @@ StreamingSubscriptionBatchSource::StreamingSubscriptionBatchSource(
       max_deadline_time_(options_.get<pubsub::MaxDeadlineTimeOption>()) {}
 
 void StreamingSubscriptionBatchSource::Start(
-    std::unique_ptr<BatchCallback> callback) {
+    std::shared_ptr<BatchCallback> callback) {
   std::unique_lock<std::mutex> lk(mu_);
   if (callback_) return;
   callback_ = std::move(callback);
@@ -405,6 +405,7 @@ void StreamingSubscriptionBatchSource::OnRead(
 
 void StreamingSubscriptionBatchSource::ShutdownStream(
     std::unique_lock<std::mutex> lk, char const* reason) {
+  // callback->ShutdownStream();
   if (stream_state_ != StreamState::kActive &&
       stream_state_ != StreamState::kDisconnecting) {
     return;

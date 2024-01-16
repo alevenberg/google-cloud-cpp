@@ -32,14 +32,15 @@ void SubscriptionMessageQueue::Start(std::unique_ptr<MessageCallback> cb) {
   auto const& current = internal::CurrentOptions();
   auto otel = current.get<OpenTelemetryTracingOption>();
   auto weak = std::weak_ptr<SubscriptionMessageQueue>(shared_from_this());
-  std::unique_ptr<BatchCallback> callback =
-      std::make_unique<DefaultBatchCallback>(
+  std::shared_ptr<BatchCallback> callback =
+      std::make_shared<DefaultBatchCallback>(
           [weak](StatusOr<google::pubsub::v1::StreamingPullResponse> r) {
             if (auto self = weak.lock()) self->OnRead(std::move(r));
           });
   if (otel) {
-    callback = std::make_unique<TracingBatchCallback>(std::move(callback));
+    callback = std::make_shared<TracingBatchCallback>(std::move(callback));
   }
+  // cb->SaveBatchCallback(callback);
   // Store subscribe span here?
   source_->Start(std::move(callback));
 }

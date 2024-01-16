@@ -33,7 +33,7 @@ class BatchCallbackWrapper : public BatchCallback {
   using Callback =
       std::function<void(StatusOr<google::pubsub::v1::StreamingPullResponse>)>;
 
-  explicit BatchCallbackWrapper(std::unique_ptr<BatchCallback> child,
+  explicit BatchCallbackWrapper(std::shared_ptr<BatchCallback> child,
                                 Callback wrapper)
       : child_(std::move(child)), wrapper_(std::move(wrapper)) {}
   ~BatchCallbackWrapper() override = default;
@@ -47,7 +47,7 @@ void AckMessage(std::string const& ack_id) override { child_->AckMessage(ack_id)
 void NackMessage(std::string const& ack_id) override { child_->NackMessage(ack_id); } 
 void BulkNack(std::vector<std::string> ack_ids) override { child_->BulkNack(ack_ids); } 
   void ExtendLeases(std::vector<std::string> ack_ids, std::chrono::seconds extension)  override { child_->ExtendLeases(ack_ids, extension); } 
-std::unique_ptr<BatchCallback> child_;
+std::shared_ptr<BatchCallback> child_;
  Callback wrapper_;
 };
 

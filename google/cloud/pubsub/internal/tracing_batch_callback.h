@@ -77,7 +77,7 @@ opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> StartSubscribeSpan(
  * */
 class TracingBatchCallback : public BatchCallback {
  public:
-  explicit TracingBatchCallback(std::unique_ptr<BatchCallback> child)
+  explicit TracingBatchCallback(std::shared_ptr<BatchCallback> child)
       : child_(std::move(child)),
         propagator_(std::make_shared<
                     opentelemetry::trace::propagation::HttpTraceContext>()) {}
@@ -151,7 +151,7 @@ class TracingBatchCallback : public BatchCallback {
   // GetSubscribeDataFromAckId(std::string ack_id);
   // opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span>
   // GetSubscribeDataFromMessageId(std::string message_id);
-  std::unique_ptr<BatchCallback> child_;
+  std::shared_ptr<BatchCallback> child_;
   std::shared_ptr<opentelemetry::context::propagation::TextMapPropagator>
       propagator_;
   std::mutex mu_;

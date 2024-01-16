@@ -50,7 +50,7 @@ class StreamingSubscriptionBatchSource
 
   ~StreamingSubscriptionBatchSource() override = default;
 
-  void Start(std::unique_ptr<BatchCallback> callback) override;
+  void Start(std::shared_ptr<BatchCallback> callback) override;
 
   void Shutdown() override;
   future<Status> AckMessage(std::string const& ack_id) override;
@@ -132,7 +132,7 @@ class StreamingSubscriptionBatchSource
   std::chrono::seconds const max_deadline_time_;
 
   std::mutex mu_;
-  std::unique_ptr<BatchCallback> callback_;
+  std::shared_ptr<BatchCallback> callback_;
   StreamState stream_state_ = StreamState::kNull;
   bool shutdown_ = false;
   bool pending_write_ = false;

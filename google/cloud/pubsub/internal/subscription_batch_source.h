@@ -44,7 +44,7 @@ class SubscriptionBatchSource {
   virtual ~SubscriptionBatchSource() = default;
 
   /// Start the source.
-  virtual void Start(std::unique_ptr<BatchCallback> cb) = 0;
+  virtual void Start(std::shared_ptr<BatchCallback> cb) = 0;
 
   /// Shutdown the source, cancel any outstanding requests and or timers. No
   /// callbacks should be generated after this call.

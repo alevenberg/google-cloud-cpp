@@ -25,7 +25,7 @@ GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
 std::chrono::seconds constexpr SubscriptionLeaseManagement::kMinimumAckDeadline;
 std::chrono::seconds constexpr SubscriptionLeaseManagement::kAckDeadlineSlack;
 
-void SubscriptionLeaseManagement::Start(std::unique_ptr<BatchCallback> cb) {
+void SubscriptionLeaseManagement::Start(std::shared_ptr<BatchCallback> cb) {
   auto weak = std::weak_ptr<SubscriptionLeaseManagement>(shared_from_this());
   child_->Start(std::make_unique<BatchCallbackWrapper>(
       std::move(cb),
