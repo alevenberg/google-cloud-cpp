@@ -51,6 +51,7 @@ class TracingSubscriptionMessageQueue : public SubscriptionMessageSource {
     auto s = internal::MakeSpan("TracingSubscriptionMessageQueue::Read");
     auto scope = internal::OTelScope(s);
     child_->Read(max_callbacks);
+    s->End();
   };
   future<Status> AckMessage(std::string const& ack_id) override {
     return child_->AckMessage(ack_id);

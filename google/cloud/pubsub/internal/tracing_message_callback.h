@@ -49,13 +49,19 @@ class TracingMessageCallback : public MessageCallback {
   };
 
   void operator()(google::pubsub::v1::ReceivedMessage m) override {
-    // span_ = internal::MakeSpan("flow control");
-    // auto scope = internal::OTelScope(span_);
+    auto span = internal::MakeSpan("flow control");
+    auto scope = internal::OTelScope(span);
     child_->operator()(std::move(m));
+    span->End();
   };
 
+  void SaveBatchCallback(std::shared_ptr<BatchCallback> cb) override {
+    batch_callback_ = std::move(cb);
+  };
+
+  std::shared_ptr<BatchCallback> batch_callback_;
   std::unique_ptr<MessageCallback> child_;
-//   opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> span_;
+  // opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> span_;
 };
 
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_END

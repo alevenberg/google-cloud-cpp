@@ -16,6 +16,7 @@
 #define GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_MESSAGE_CALLBACK_H
 
 #include "google/cloud/pubsub/exactly_once_ack_handler.h"
+#include "google/cloud/pubsub/internal/batch_callback.h"
 #include "google/cloud/pubsub/message.h"
 #include "google/cloud/pubsub/version.h"
 #include "google/cloud/completion_queue.h"
@@ -40,6 +41,8 @@ class MessageCallback {
       pubsub::Message,
       std::unique_ptr<pubsub::ExactlyOnceAckHandler::Impl>) = 0;
   virtual void operator()(google::pubsub::v1::ReceivedMessage) = 0;
+
+  virtual void SaveBatchCallback(std::shared_ptr<BatchCallback> cb) = 0;
 };
 
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_END

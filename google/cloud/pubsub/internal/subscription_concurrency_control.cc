@@ -67,8 +67,6 @@ void SubscriptionConcurrencyControl::Start(Callback cb) {
             if (auto self = w.lock()) self->OnMessage(std::move(r));
           });
   if (otel) {
-    // Add a call to source to store the callback?
-    // Then call ->GetSubscribeSpan(std::string const& message_id);
     callback = std::make_unique<TracingMessageCallback>(std::move(callback));
   }
   source_->Start(std::move(callback));
