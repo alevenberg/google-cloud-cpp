@@ -89,15 +89,34 @@ class TracingBatchCallback : public BatchCallback {
       for (auto const& message : response->received_messages()) {
         auto subscribe_span = StartSubscribeSpan(message, propagator_);
         auto scope = internal::OTelScope(subscribe_span);
-        message_id_by_subscribe_span_[message.message().message_id()] =
-            subscribe_span;
-        ack_id_by_subscribe_span_[message.ack_id()] = subscribe_span;
+        std::lock_guard<std::mutex> lk(mu_);
+        {
+          message_id_by_subscribe_span_[message.message().message_id()] =
+              subscribe_span;
+          ack_id_by_subscribe_span_[message.ack_id()] = subscribe_span;
+        }
       }
     }
 
     child_->operator()(std::move(response));
+
+    for (auto const& kv : message_id_by_subscribe_span_) {
+      kv.second->AddEvent("callback complete");
+    }
   };
 
+  void AckMessage(std::string const& ack_id) override {
+    std::lock_guard<std::mutex> lk(mu_);
+    {
+      if (ack_id_by_subscribe_span_.find(ack_id) !=
+          ack_id_by_subscribe_span_.end()) {
+        auto subscribe_span = ack_id_by_subscribe_span_[ack_id];
+        subscribe_span->AddEvent("ack message");
+        ack_id_by_subscribe_span_.erase(ack_id);
+        subscribe_span->End();
+      }
+    }
+  }
   // opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span>
   // GetSubscribeDataFromAckId(std::string ack_id);
   // opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span>
@@ -105,12 +124,13 @@ class TracingBatchCallback : public BatchCallback {
   std::unique_ptr<BatchCallback> child_;
   std::shared_ptr<opentelemetry::context::propagation::TextMapPropagator>
       propagator_;
+  std::mutex mu_;
   std::unordered_map<
       std::string, opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span>>
-      message_id_by_subscribe_span_;
+      message_id_by_subscribe_span_;  // ABSL_GUARDED_BY(mu_)
   std::unordered_map<
       std::string, opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span>>
-      ack_id_by_subscribe_span_;
+      ack_id_by_subscribe_span_;  // ABSL_GUARDED_BY(mu_)
 };
 
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_END

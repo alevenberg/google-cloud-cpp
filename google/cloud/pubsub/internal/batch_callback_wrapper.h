@@ -43,7 +43,7 @@ class BatchCallbackWrapper : public BatchCallback {
     wrapper_(response);
     child_->operator()(std::move(response));
   };
-
+void AckMessage(std::string const& ack_id) override { child_->AckMessage(ack_id); }
   std::unique_ptr<BatchCallback> child_;
   Callback wrapper_;
 };

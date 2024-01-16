@@ -29,11 +29,8 @@ namespace cloud {
 namespace pubsub_internal {
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
 
-using Callback = std::function<void(
-    pubsub::Message, std::unique_ptr<pubsub::ExactlyOnceAckHandler::Impl>)>;
-
-class TracingSubscriptionConcurrencyControl
-    : public SubscriptionConcurrencyControlSource {
+class TracingSubscribeData
+    : public TracingSubscribeData {
  public:
   void Start(Callback);
   void Shutdown();

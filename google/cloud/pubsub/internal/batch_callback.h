@@ -43,7 +43,7 @@ class BatchCallback {
  // if we want to wrap the ack/nacks with spans here return a result.
  // Add the result attribute for the corresponding span
   // Add a function to add the ack event
-  // void AckMessage(std::string const& ack_id)
+  virtual void AckMessage(std::string const& ack_id) = 0;
 
   // Add a function to add the nack event
   // void NackMessage(std::string const& ack_id)

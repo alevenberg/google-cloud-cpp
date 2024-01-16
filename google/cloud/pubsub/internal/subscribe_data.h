@@ -1,4 +1,4 @@
-// Copyright 2024 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,40 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_DEFAULT_BATCH_CALLBACK_H
-#define GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_DEFAULT_BATCH_CALLBACK_H
+#ifndef GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_BATCH_SINK_H
+#define GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_BATCH_SINK_H
 
-#include "google/cloud/pubsub/internal/batch_callback.h"
+#include "google/cloud/pubsub/message.h"
 #include "google/cloud/pubsub/version.h"
+#include "google/cloud/completion_queue.h"
+#include "google/cloud/future.h"
 #include "google/cloud/status_or.h"
 #include <google/pubsub/v1/pubsub.pb.h>
+#include <string>
 
 namespace google {
 namespace cloud {
 namespace pubsub_internal {
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
 
-/**
- * Default implementation.
- */
-class DefaultBatchCallback : public BatchCallback {
+class SubscribeData {
  public:
-  using Callback =
-      std::function<void(StatusOr<google::pubsub::v1::StreamingPullResponse>)>;
-
-  explicit DefaultBatchCallback(Callback callback)
-      : callback_(std::move(callback)) {}
-  ~DefaultBatchCallback() override = default;
-
-  void operator()(
-      StatusOr<google::pubsub::v1::StreamingPullResponse> response) override {
-    callback_(std::move(response));
-  };
-
-void AckMessage(std::string const& ack_id) override {};
-
- private:
-  Callback callback_;
+  virtual ~SubscribeData() = default;
+  // optional ? or a vector of links
+  virtual void GetMessage() = 0;
+  virtual void SaveMessage() = 0;
 };
 
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_END
@@ -53,4 +41,4 @@ GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_END
 }  // namespace cloud
 }  // namespace google
 
-#endif  // GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_DEFAULT_BATCH_CALLBACK_H
+#endif  // GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_BATCH_SINK_H

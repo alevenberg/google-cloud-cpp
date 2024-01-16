@@ -92,6 +92,7 @@ void StreamingSubscriptionBatchSource::Shutdown() {
 
 future<Status> StreamingSubscriptionBatchSource::AckMessage(
     std::string const& ack_id) {
+  callback_->AckMessage(ack_id);
   internal::OptionsSpan span(options_);
   google::pubsub::v1::AcknowledgeRequest request;
   request.set_subscription(subscription_full_name_);
