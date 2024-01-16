@@ -42,7 +42,8 @@ class SubscriptionSessionImpl
     std::shared_ptr<SubscriptionMessageSource> queue =
         SubscriptionMessageQueue::Create(shutdown_manager, std::move(source));
     if (otel_enabled) {
-      queue = std::make_shared<TracingSubscriptionMessageQueue>(std::move(queue));
+      queue =
+          std::make_shared<TracingSubscriptionMessageQueue>(std::move(queue));
     }
     auto concurrency_control = SubscriptionConcurrencyControl::Create(
         cq, shutdown_manager, std::move(queue),

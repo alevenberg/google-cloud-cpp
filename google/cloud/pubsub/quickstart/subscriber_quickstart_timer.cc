@@ -90,8 +90,8 @@ int main(int argc, char* argv[]) try {
           std::cout << attribute_msg.str();
         }
         sleep(1);
-         // std::move(h).nack();
-                std::move(h).ack();
+        // std::move(h).nack();
+        std::move(h).ack();
       });
 
   std::cout << "Waiting for messages on " + subscription_id + "...\n";

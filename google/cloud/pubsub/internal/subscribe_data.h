@@ -12,14 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_BATCH_SINK_H
-#define GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_BATCH_SINK_H
+#ifndef GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_SUBSCRIBE_DATA_H
+#define GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_SUBSCRIBE_DATA_H
 
 #include "google/cloud/pubsub/message.h"
 #include "google/cloud/pubsub/version.h"
 #include "google/cloud/completion_queue.h"
 #include "google/cloud/future.h"
 #include "google/cloud/status_or.h"
+#include "opentelemetry/trace/span.h"
 #include <google/pubsub/v1/pubsub.pb.h>
 #include <string>
 
@@ -31,9 +32,25 @@ GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
 class SubscribeData {
  public:
   virtual ~SubscribeData() = default;
-  // optional ? or a vector of links
-  virtual void GetMessage() = 0;
-  virtual void SaveMessage() = 0;
+  SubscribeData() = default;
+  virtual bool has_subscribe_span() { return false; };
+};
+
+class NoopSubscribeData : public SubscribeData {
+ public:
+  NoopSubscribeData() = default;
+};
+
+class TracingSubscribeData : public SubscribeData {
+ public:
+  explicit TracingSubscribeData(
+      opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> span)
+      : span_(span) {
+    has_subscribe_span_ = true;
+  };
+  bool has_subscribe_span() override { return has_subscribe_span_; }
+  bool has_subscribe_span_ = false;
+  opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> span_;
 };
 
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_END
@@ -41,4 +58,4 @@ GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_END
 }  // namespace cloud
 }  // namespace google
 
-#endif  // GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_BATCH_SINK_H
+#endif  // GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_SUBSCRIBE_DATA_H

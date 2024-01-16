@@ -42,10 +42,14 @@ class DefaultBatchCallback : public BatchCallback {
     callback_(std::move(response));
   };
 
-void AckMessage(std::string const& ack_id) override {};
-void NackMessage(std::string const& ack_id) override {};
- void BulkNack(std::vector<std::string> ack_ids) override {}; 
-  void ExtendLeases(std::vector<std::string> ack_ids, std::chrono::seconds extension)  override {  } 
+  void AckMessage(std::string const& ack_id) override{};
+  void NackMessage(std::string const& ack_id) override{};
+  void BulkNack(std::vector<std::string> ack_ids) override{};
+  void ExtendLeases(std::vector<std::string> ack_ids,
+                    std::chrono::seconds extension) override {}
+  SubscribeData GetSubscribeDataFromAckId(std::string ack_id) override {
+    return NoopSubscribeData();
+  }
 
  private:
   Callback callback_;

@@ -43,12 +43,24 @@ class BatchCallbackWrapper : public BatchCallback {
     wrapper_(response);
     child_->operator()(std::move(response));
   };
-void AckMessage(std::string const& ack_id) override { child_->AckMessage(ack_id); }
-void NackMessage(std::string const& ack_id) override { child_->NackMessage(ack_id); } 
-void BulkNack(std::vector<std::string> ack_ids) override { child_->BulkNack(ack_ids); } 
-  void ExtendLeases(std::vector<std::string> ack_ids, std::chrono::seconds extension)  override { child_->ExtendLeases(ack_ids, extension); } 
-std::shared_ptr<BatchCallback> child_;
- Callback wrapper_;
+  void AckMessage(std::string const& ack_id) override {
+    child_->AckMessage(ack_id);
+  }
+  void NackMessage(std::string const& ack_id) override {
+    child_->NackMessage(ack_id);
+  }
+  void BulkNack(std::vector<std::string> ack_ids) override {
+    child_->BulkNack(ack_ids);
+  }
+  void ExtendLeases(std::vector<std::string> ack_ids,
+                    std::chrono::seconds extension) override {
+    child_->ExtendLeases(ack_ids, extension);
+  }
+    SubscribeData GetSubscribeDataFromAckId(std::string ack_id) override {
+    return NoopSubscribeData();
+  }
+  std::shared_ptr<BatchCallback> child_;
+  Callback wrapper_;
 };
 
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_END

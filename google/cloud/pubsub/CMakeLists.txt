@@ -192,6 +192,7 @@ add_library(
     internal/session_shutdown_manager.h
     internal/streaming_subscription_batch_source.cc
     internal/streaming_subscription_batch_source.h
+    internal/subscribe_data.h
     internal/subscriber_auth_decorator.cc
     internal/subscriber_auth_decorator.h
     internal/subscriber_connection_impl.cc

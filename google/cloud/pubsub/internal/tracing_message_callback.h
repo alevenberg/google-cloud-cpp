@@ -49,7 +49,18 @@ class TracingMessageCallback : public MessageCallback {
   };
 
   void operator()(google::pubsub::v1::ReceivedMessage m) override {
-    auto span = internal::MakeSpan("flow control");
+    // auto span = StartSchedulerSpan();
+    namespace sc = opentelemetry::trace::SemanticConventions;
+    opentelemetry::trace::StartSpanOptions options;
+    options.kind = opentelemetry::trace::SpanKind::kClient;
+    // if (batch_callback_) {
+    //   batch_callback->Get
+    // }
+    auto span = internal::MakeSpan(
+        "subscriber scheduler",
+        {{sc::kMessagingSystem, "gcp_pubsub"},
+         {sc::kCodeFunction, "pubsub::SubscriptionMessageQueue::Read"}},
+        options);
     auto scope = internal::OTelScope(span);
     child_->operator()(std::move(m));
     span->End();

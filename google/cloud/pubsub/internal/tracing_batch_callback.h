@@ -17,6 +17,7 @@
 
 #include "google/cloud/pubsub/internal/batch_callback.h"
 #include "google/cloud/pubsub/internal/message_propagator.h"
+#include "google/cloud/pubsub/internal/subscribe_data.h"
 #include "google/cloud/pubsub/options.h"
 #include "google/cloud/pubsub/version.h"
 #include "google/cloud/internal/opentelemetry.h"
@@ -118,7 +119,7 @@ class TracingBatchCallback : public BatchCallback {
     }
   }
 
-    void NackMessage(std::string const& ack_id) override {
+  void NackMessage(std::string const& ack_id) override {
     std::lock_guard<std::mutex> lk(mu_);
     {
       if (ack_id_by_subscribe_span_.find(ack_id) !=
@@ -130,25 +131,37 @@ class TracingBatchCallback : public BatchCallback {
       }
     }
   }
-   void BulkNack(std::vector<std::string> ack_ids) override {
- for (auto const& ack_id : ack_ids) {
-  NackMessage(ack_id);
- } 
-   }
-     void ExtendLeases(std::vector<std::string> ack_ids, std::chrono::seconds extension)  override {  
-      for (auto const& ack_id : ack_ids) {
-    std::lock_guard<std::mutex> lk(mu_);
-    {
-      if (ack_id_by_subscribe_span_.find(ack_id) !=
-          ack_id_by_subscribe_span_.end()) {
-        auto subscribe_span = ack_id_by_subscribe_span_[ack_id];
-        subscribe_span->AddEvent("extend lease");
+  void BulkNack(std::vector<std::string> ack_ids) override {
+    for (auto const& ack_id : ack_ids) {
+      NackMessage(ack_id);
+    }
+  }
+  void ExtendLeases(std::vector<std::string> ack_ids,
+                    std::chrono::seconds extension) override {
+    for (auto const& ack_id : ack_ids) {
+      std::lock_guard<std::mutex> lk(mu_);
+      {
+        if (ack_id_by_subscribe_span_.find(ack_id) !=
+            ack_id_by_subscribe_span_.end()) {
+          auto subscribe_span = ack_id_by_subscribe_span_[ack_id];
+          subscribe_span->AddEvent("extend lease");
+        }
       }
     }
- }  
-     } 
-  // opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span>
-  // GetSubscribeDataFromAckId(std::string ack_id);
+  }
+
+  SubscribeData GetSubscribeDataFromAckId(std::string ack_id) override {
+    // std::lock_guard<std::mutex> lk(mu_);
+    // {
+    //   if (ack_id_by_subscribe_span_.find(ack_id) !=
+    //       ack_id_by_subscribe_span_.end()) {
+    //     auto subscribe_span = ack_id_by_subscribe_span_[ack_id];
+    //     return TracingSubscribeData(subscribe_span);
+    //   }
+    // }
+    return NoopSubscribeData();
+  };
+
   // opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span>
   // GetSubscribeDataFromMessageId(std::string message_id);
   std::shared_ptr<BatchCallback> child_;

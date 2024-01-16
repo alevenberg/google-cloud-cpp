@@ -102,6 +102,7 @@ google_cloud_cpp_pubsub_hdrs = [
     "internal/sequential_batch_sink.h",
     "internal/session_shutdown_manager.h",
     "internal/streaming_subscription_batch_source.h",
+    "internal/subscribe_data.h",
     "internal/subscriber_auth_decorator.h",
     "internal/subscriber_connection_impl.h",
     "internal/subscriber_logging_decorator.h",
