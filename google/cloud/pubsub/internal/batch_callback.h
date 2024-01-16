@@ -51,7 +51,7 @@ class BatchCallback {
   virtual void ExtendLeases(std::vector<std::string> ack_ids,
                             std::chrono::seconds extension) = 0;
 
-  virtual SubscribeData GetSubscribeDataFromAckId(std::string ack_id) = 0;
+  virtual std::shared_ptr<SubscribeData> GetSubscribeDataFromAckId(std::string ack_id) = 0;
 };
 
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_END

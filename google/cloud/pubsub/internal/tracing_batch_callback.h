@@ -150,16 +150,16 @@ class TracingBatchCallback : public BatchCallback {
     }
   }
 
-  SubscribeData GetSubscribeDataFromAckId(std::string ack_id) override {
-    // std::lock_guard<std::mutex> lk(mu_);
-    // {
-    //   if (ack_id_by_subscribe_span_.find(ack_id) !=
-    //       ack_id_by_subscribe_span_.end()) {
-    //     auto subscribe_span = ack_id_by_subscribe_span_[ack_id];
-    //     return TracingSubscribeData(subscribe_span);
-    //   }
-    // }
-    return NoopSubscribeData();
+    std::shared_ptr<SubscribeData>  GetSubscribeDataFromAckId(std::string ack_id) override {
+    std::lock_guard<std::mutex> lk(mu_);
+    {
+      if (ack_id_by_subscribe_span_.find(ack_id) !=
+          ack_id_by_subscribe_span_.end()) {
+        auto subscribe_span = ack_id_by_subscribe_span_[ack_id];
+        return std::make_shared<TracingSubscribeData>(subscribe_span);
+      }
+    }
+    return std::make_shared<NoopSubscribeData>();
   };
 
   // opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span>
