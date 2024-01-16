@@ -40,7 +40,7 @@ void SubscriptionMessageQueue::Start(std::unique_ptr<MessageCallback> cb) {
   if (otel) {
     callback = std::make_shared<TracingBatchCallback>(std::move(callback));
   }
-  // cb->SaveBatchCallback(callback);
+  callback_->SaveBatchCallback(callback);
   // Store subscribe span here?
   source_->Start(std::move(callback));
 }

@@ -56,7 +56,7 @@ class TracingMessageCallback : public MessageCallback {
   };
 
   void SaveBatchCallback(std::shared_ptr<BatchCallback> cb) override {
-    batch_callback_ = std::move(cb);
+    batch_callback_ = cb;
   };
 
   std::shared_ptr<BatchCallback> batch_callback_;
