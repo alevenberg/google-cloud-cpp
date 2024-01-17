@@ -49,8 +49,11 @@ class TracingSubscribeData : public SubscribeData {
     has_subscribe_span_ = true;
   };
   bool has_subscribe_span() override { return has_subscribe_span_; }
-  opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span>  get_subscribe_span()  { return span_; }
-  
+  opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span>
+  get_subscribe_span() {
+    return span_;
+  }
+
   bool has_subscribe_span_ = false;
   opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> span_;
 };

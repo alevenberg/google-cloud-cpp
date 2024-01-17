@@ -150,7 +150,8 @@ class TracingBatchCallback : public BatchCallback {
     }
   }
 
-    std::shared_ptr<SubscribeData>  GetSubscribeDataFromAckId(std::string ack_id) override {
+  std::shared_ptr<SubscribeData> GetSubscribeDataFromAckId(
+      std::string ack_id) override {
     std::lock_guard<std::mutex> lk(mu_);
     {
       if (ack_id_by_subscribe_span_.find(ack_id) !=
@@ -162,8 +163,6 @@ class TracingBatchCallback : public BatchCallback {
     return std::make_shared<NoopSubscribeData>();
   };
 
-  // opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span>
-  // GetSubscribeDataFromMessageId(std::string message_id);
   std::shared_ptr<BatchCallback> child_;
   std::shared_ptr<opentelemetry::context::propagation::TextMapPropagator>
       propagator_;

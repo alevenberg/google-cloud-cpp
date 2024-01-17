@@ -56,8 +56,10 @@ class BatchCallbackWrapper : public BatchCallback {
                     std::chrono::seconds extension) override {
     child_->ExtendLeases(ack_ids, extension);
   }
-    std::shared_ptr<SubscribeData> GetSubscribeDataFromAckId(std::string ack_id) override {
-    return std::make_shared<NoopSubscribeData>();  }
+  std::shared_ptr<SubscribeData> GetSubscribeDataFromAckId(
+      std::string ack_id) override {
+    return std::make_shared<NoopSubscribeData>();
+  }
   std::shared_ptr<BatchCallback> child_;
   Callback wrapper_;
 };

@@ -54,9 +54,11 @@ class TracingMessageCallback : public MessageCallback {
     opentelemetry::trace::StartSpanOptions options;
     options.kind = opentelemetry::trace::SpanKind::kClient;
     if (batch_callback_) {
-      std::shared_ptr<SubscribeData> data = batch_callback_->GetSubscribeDataFromAckId(m.ack_id());
+      std::shared_ptr<SubscribeData> data =
+          batch_callback_->GetSubscribeDataFromAckId(m.ack_id());
       if (data->has_subscribe_span()) {
-        std::shared_ptr<TracingSubscribeData> tracing = std::dynamic_pointer_cast<TracingSubscribeData>(data);
+        std::shared_ptr<TracingSubscribeData> tracing =
+            std::dynamic_pointer_cast<TracingSubscribeData>(data);
         options.parent = tracing->get_subscribe_span()->GetContext();
       }
     }
