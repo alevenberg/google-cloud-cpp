@@ -38,18 +38,24 @@ class BatchCallback {
 
   virtual void operator()(
       StatusOr<google::pubsub::v1::StreamingPullResponse> response) = 0;
+
   // Add a function to add the ack event
   virtual void AckMessage(std::string const& ack_id) = 0;
+  virtual void EndAckMessage(std::string const& ack_id) = 0;
 
   // Add a function to add the nack event
   virtual void NackMessage(std::string const& ack_id) = 0;
+  virtual void EndNackMessage(std::string const& ack_id) = 0;
 
   // Add a function to add bulk nack event
   virtual void BulkNack(std::vector<std::string> ack_ids) = 0;
+  virtual void EndBulkNack(std::vector<std::string> ack_ids) = 0;
 
-  // Add a function to add the extennd event
+  // Add a function to add the extend event
   virtual void ExtendLeases(std::vector<std::string> ack_ids,
                             std::chrono::seconds extension) = 0;
+  virtual void EndExtendLeases(std::vector<std::string> ack_ids,
+                               std::chrono::seconds extension) = 0;
 
   virtual std::shared_ptr<SubscribeData> GetSubscribeDataFromAckId(
       std::string ack_id) = 0;

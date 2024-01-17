@@ -112,9 +112,7 @@ class TracingBatchCallback : public BatchCallback {
       if (ack_id_by_subscribe_span_.find(ack_id) !=
           ack_id_by_subscribe_span_.end()) {
         auto subscribe_span = ack_id_by_subscribe_span_[ack_id];
-        subscribe_span->AddEvent("ack message");
-        ack_id_by_subscribe_span_.erase(ack_id);
-        subscribe_span->End();
+        subscribe_span->AddEvent("gl-cpp.ack_start");
       }
     }
   }
@@ -125,15 +123,20 @@ class TracingBatchCallback : public BatchCallback {
       if (ack_id_by_subscribe_span_.find(ack_id) !=
           ack_id_by_subscribe_span_.end()) {
         auto subscribe_span = ack_id_by_subscribe_span_[ack_id];
-        subscribe_span->AddEvent("nack message");
-        ack_id_by_subscribe_span_.erase(ack_id);
-        subscribe_span->End();
+        subscribe_span->AddEvent("gl-cpp.nack_start");
       }
     }
   }
   void BulkNack(std::vector<std::string> ack_ids) override {
     for (auto const& ack_id : ack_ids) {
-      NackMessage(ack_id);
+      std::lock_guard<std::mutex> lk(mu_);
+      {
+        if (ack_id_by_subscribe_span_.find(ack_id) !=
+            ack_id_by_subscribe_span_.end()) {
+          auto subscribe_span = ack_id_by_subscribe_span_[ack_id];
+          subscribe_span->AddEvent("gl-cpp.bulk_nack_start");
+        }
+      }
     }
   }
   void ExtendLeases(std::vector<std::string> ack_ids,
@@ -163,6 +166,33 @@ class TracingBatchCallback : public BatchCallback {
     return std::make_shared<NoopSubscribeData>();
   };
 
+  void EndAckMessage(std::string const& ack_id) override {
+    std::lock_guard<std::mutex> lk(mu_);
+    {
+      if (ack_id_by_subscribe_span_.find(ack_id) !=
+          ack_id_by_subscribe_span_.end()) {
+        auto subscribe_span = ack_id_by_subscribe_span_[ack_id];
+        subscribe_span->AddEvent("gl-cpp.ack_end");
+        ack_id_by_subscribe_span_.erase(ack_id);
+        subscribe_span->End();
+      }
+    }
+  };
+  void EndNackMessage(std::string const& ack_id) override {
+    std::lock_guard<std::mutex> lk(mu_);
+    {
+      if (ack_id_by_subscribe_span_.find(ack_id) !=
+          ack_id_by_subscribe_span_.end()) {
+        auto subscribe_span = ack_id_by_subscribe_span_[ack_id];
+        subscribe_span->AddEvent("gl-cpp.nack_end");
+        ack_id_by_subscribe_span_.erase(ack_id);
+        subscribe_span->End();
+      }
+    }
+  };
+  void EndBulkNack(std::vector<std::string> ack_ids) override{};
+  void EndExtendLeases(std::vector<std::string> ack_ids,
+                       std::chrono::seconds extension) override{};
   std::shared_ptr<BatchCallback> child_;
   std::shared_ptr<opentelemetry::context::propagation::TextMapPropagator>
       propagator_;

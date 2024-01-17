@@ -47,6 +47,13 @@ class DefaultBatchCallback : public BatchCallback {
   void BulkNack(std::vector<std::string> ack_ids) override{};
   void ExtendLeases(std::vector<std::string> ack_ids,
                     std::chrono::seconds extension) override {}
+
+  void EndAckMessage(std::string const& ack_id) override{};
+  void EndNackMessage(std::string const& ack_id) override{};
+  void EndBulkNack(std::vector<std::string> ack_ids) override{};
+  void EndExtendLeases(std::vector<std::string> ack_ids,
+                       std::chrono::seconds extension) override{};
+
   std::shared_ptr<SubscribeData> GetSubscribeDataFromAckId(
       std::string ack_id) override {
     return std::make_shared<NoopSubscribeData>();

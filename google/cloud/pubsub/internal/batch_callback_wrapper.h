@@ -60,6 +60,21 @@ class BatchCallbackWrapper : public BatchCallback {
       std::string ack_id) override {
     return std::make_shared<NoopSubscribeData>();
   }
+
+  void EndAckMessage(std::string const& ack_id) override {
+    child_->EndAckMessage(ack_id);
+  };
+  void EndNackMessage(std::string const& ack_id) override {
+    child_->EndNackMessage(ack_id);
+  };
+  void EndBulkNack(std::vector<std::string> ack_ids) override {
+    child_->EndBulkNack(ack_ids);
+  };
+  void EndExtendLeases(std::vector<std::string> ack_ids,
+                       std::chrono::seconds extension) override {
+    child_->EndExtendLeases(ack_ids, extension);
+  };
+
   std::shared_ptr<BatchCallback> child_;
   Callback wrapper_;
 };
