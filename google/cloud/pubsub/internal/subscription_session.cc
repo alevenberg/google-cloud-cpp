@@ -38,7 +38,7 @@ class SubscriptionSessionImpl
       Options const& opts, CompletionQueue cq,
       std::shared_ptr<SessionShutdownManager> shutdown_manager,
       std::shared_ptr<SubscriptionBatchSource> source, Callback callback) {
-    bool otel_enabled = opts.get<OpenTelemetryTracingOption>();
+    // bool otel_enabled = opts.get<OpenTelemetryTracingOption>();
     std::shared_ptr<SubscriptionMessageSource> queue =
         SubscriptionMessageQueue::Create(shutdown_manager, std::move(source));
     auto concurrency_control = SubscriptionConcurrencyControl::Create(

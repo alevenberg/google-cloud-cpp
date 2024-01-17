@@ -107,14 +107,15 @@ future<Status> StreamingSubscriptionBatchSource::AckMessage(
         cq_,
         [stub = stub_](auto& cq, auto context, auto const& request) {
           return stub->AsyncAcknowledge(cq, std::move(context), request);
+          
         },
         std::move(request), __func__);
   }
   lk.unlock();
   return stub_
       ->AsyncAcknowledge(cq_, std::make_shared<grpc::ClientContext>(), request)
-      .then([&](auto f) {
-        callback_->EndAckMessage(ack_id);
+      .then([calllback = callback_, ack_id](auto f) {
+        calllback->EndAckMessage(ack_id);
         return f;
       });
 }
