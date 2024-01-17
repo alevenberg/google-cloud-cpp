@@ -59,11 +59,12 @@ class TracingMessageCallback : public MessageCallback {
       if (data->has_subscribe_span()) {
         std::shared_ptr<TracingSubscribeData> tracing =
             std::dynamic_pointer_cast<TracingSubscribeData>(data);
-        options.parent = tracing->get_subscribe_span()->GetContext();
+            subscribe_span_ = tracing->get_subscribe_span(); 
+        options.parent = subscribe_span_->GetContext();
       }
     }
     auto span = internal::MakeSpan(
-        "subscriber scheduler",
+        "subscriber flow_control ",
         {{sc::kMessagingSystem, "gcp_pubsub"},
          {sc::kCodeFunction, "pubsub::SubscriptionMessageQueue::Read"}},
         options);
@@ -78,7 +79,7 @@ class TracingMessageCallback : public MessageCallback {
 
   std::shared_ptr<BatchCallback> batch_callback_;
   std::unique_ptr<MessageCallback> child_;
-  // opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> span_;
+  opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> subscribe_span_;
 };
 
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_END

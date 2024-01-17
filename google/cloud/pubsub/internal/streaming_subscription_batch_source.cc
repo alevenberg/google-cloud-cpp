@@ -107,7 +107,6 @@ future<Status> StreamingSubscriptionBatchSource::AckMessage(
         cq_,
         [stub = stub_](auto& cq, auto context, auto const& request) {
           return stub->AsyncAcknowledge(cq, std::move(context), request);
-          
         },
         std::move(request), __func__);
   }
@@ -145,8 +144,8 @@ future<Status> StreamingSubscriptionBatchSource::NackMessage(
   return stub_
       ->AsyncModifyAckDeadline(cq_, std::make_shared<grpc::ClientContext>(),
                                request)
-      .then([&](auto f) {
-        callback_->EndNackMessage(ack_id);
+      .then([calllback = callback_, ack_id](auto f) {
+        calllback->EndNackMessage(ack_id);
         return f;
       });
 }
@@ -170,9 +169,15 @@ future<Status> StreamingSubscriptionBatchSource::BulkNack(
 
   std::vector<future<Status>> pending(requests.size());
   std::transform(requests.begin(), requests.end(), pending.begin(),
-                 [this](auto const& request) {
-                   return stub_->AsyncModifyAckDeadline(
-                       cq_, std::make_shared<grpc::ClientContext>(), request);
+                 [this, callback = callback_, ack_ids](auto const& request) {
+                   return stub_
+                       ->AsyncModifyAckDeadline(
+                           cq_, std::make_shared<grpc::ClientContext>(),
+                           request)
+                       .then([callback = callback, ack_ids](auto f) {
+                         callback->EndBulkNack(ack_ids);
+                         return f;
+                       });
                  });
   return Reduce(std::move(pending));
 }

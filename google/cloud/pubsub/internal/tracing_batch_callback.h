@@ -100,15 +100,11 @@ class TracingBatchCallback : public BatchCallback {
     }
 
     child_->operator()(std::move(response));
-
-    for (auto const& kv : message_id_by_subscribe_span_) {
-      kv.second->AddEvent("callback complete");
-    }
   };
 
   void AckMessage(std::string const& ack_id) override {
-    std::lock_guard<std::mutex> lk(mu_);
     {
+      std::lock_guard<std::mutex> lk(mu_);
       if (ack_id_by_subscribe_span_.find(ack_id) !=
           ack_id_by_subscribe_span_.end()) {
         auto subscribe_span = ack_id_by_subscribe_span_[ack_id];
@@ -118,8 +114,8 @@ class TracingBatchCallback : public BatchCallback {
   }
 
   void NackMessage(std::string const& ack_id) override {
-    std::lock_guard<std::mutex> lk(mu_);
     {
+      std::lock_guard<std::mutex> lk(mu_);
       if (ack_id_by_subscribe_span_.find(ack_id) !=
           ack_id_by_subscribe_span_.end()) {
         auto subscribe_span = ack_id_by_subscribe_span_[ack_id];
@@ -142,8 +138,8 @@ class TracingBatchCallback : public BatchCallback {
   void ExtendLeases(std::vector<std::string> ack_ids,
                     std::chrono::seconds extension) override {
     for (auto const& ack_id : ack_ids) {
-      std::lock_guard<std::mutex> lk(mu_);
       {
+        std::lock_guard<std::mutex> lk(mu_);
         if (ack_id_by_subscribe_span_.find(ack_id) !=
             ack_id_by_subscribe_span_.end()) {
           auto subscribe_span = ack_id_by_subscribe_span_[ack_id];
@@ -155,8 +151,8 @@ class TracingBatchCallback : public BatchCallback {
 
   std::shared_ptr<SubscribeData> GetSubscribeDataFromAckId(
       std::string ack_id) override {
-    std::lock_guard<std::mutex> lk(mu_);
     {
+      std::lock_guard<std::mutex> lk(mu_);
       if (ack_id_by_subscribe_span_.find(ack_id) !=
           ack_id_by_subscribe_span_.end()) {
         auto subscribe_span = ack_id_by_subscribe_span_[ack_id];
@@ -164,20 +160,21 @@ class TracingBatchCallback : public BatchCallback {
       }
     }
     return std::make_shared<NoopSubscribeData>();
-  };
+  }
 
   void EndAckMessage(std::string const& ack_id) override {
-    std::lock_guard<std::mutex> lk(mu_);
     {
+      std::lock_guard<std::mutex> lk(mu_);
       if (ack_id_by_subscribe_span_.find(ack_id) !=
           ack_id_by_subscribe_span_.end()) {
         auto subscribe_span = ack_id_by_subscribe_span_[ack_id];
         subscribe_span->AddEvent("gl-cpp.ack_end");
-        ack_id_by_subscribe_span_.erase(ack_id);
         subscribe_span->End();
+        ack_id_by_subscribe_span_.erase(ack_id);
       }
     }
-  };
+  }
+
   void EndNackMessage(std::string const& ack_id) override {
     std::lock_guard<std::mutex> lk(mu_);
     {
@@ -185,8 +182,8 @@ class TracingBatchCallback : public BatchCallback {
           ack_id_by_subscribe_span_.end()) {
         auto subscribe_span = ack_id_by_subscribe_span_[ack_id];
         subscribe_span->AddEvent("gl-cpp.nack_end");
-        ack_id_by_subscribe_span_.erase(ack_id);
         subscribe_span->End();
+        ack_id_by_subscribe_span_.erase(ack_id);
       }
     }
   };
