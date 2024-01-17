@@ -55,7 +55,7 @@ class AckHandlerImpl : public pubsub::ExactlyOnceAckHandler::Impl {
 
 }  // namespace
 
-void SubscriptionConcurrencyControl::Start(Callback cb) {
+void SubscriptionConcurrencyControl::Start(std::unique_ptr<MessageCallback>  cb) {
   std::unique_lock<std::mutex> lk(mu_);
   if (callback_) return;
   callback_ = std::move(cb);
@@ -128,7 +128,7 @@ void SubscriptionConcurrencyControl::OnMessageAsync(
   shutdown_manager_->StartOperation(__func__, "handler", [&] {
     auto h = std::make_unique<AckHandlerImpl>(
         std::move(w), std::move(*m.mutable_ack_id()), m.delivery_attempt());
-    callback_(FromProto(std::move(*m.mutable_message())), std::move(h));
+    callback_->operator()(FromProto(std::move(*m.mutable_message())), std::move(h));
   });
   shutdown_manager_->FinishedOperation("callback");
 }
