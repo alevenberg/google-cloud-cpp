@@ -106,6 +106,7 @@ add_library(
     internal/ack_handler_wrapper.cc
     internal/ack_handler_wrapper.h
     internal/batch_callback.h
+    internal/batch_callback_wrapper.h
     internal/batch_sink.h
     internal/batching_publisher_connection.cc
     internal/batching_publisher_connection.h
