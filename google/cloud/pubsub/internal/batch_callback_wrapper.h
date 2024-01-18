@@ -60,10 +60,7 @@ class BatchCallbackWrapper : public BatchCallback {
       std::string ack_id) override {
     return std::make_shared<NoopSubscribeData>();
   }
-  std::shared_ptr<SubscribeData> GetSubscribeDataFromMessageId(
-      std::string message_id) override {
-    return std::make_shared<NoopSubscribeData>();
-  }  
+
   void EndAckMessage(std::string const& ack_id) override {
     child_->EndAckMessage(ack_id);
   };

@@ -27,7 +27,6 @@ GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
 
 /**
  * Default implementation.
- * Add a child here?
  */
 class DefaultMessageCallback : public MessageCallback {
  public:
@@ -51,14 +50,10 @@ class DefaultMessageCallback : public MessageCallback {
   void operator()(google::pubsub::v1::ReceivedMessage m) override {
     message_callback_(std::move(m));
   };
-   void SaveMessageCallback(MessageCallbackFunction message_callback) override {
-    message_callback_ = std::move(message_callback); 
-   };
- 
   void SaveBatchCallback(std::shared_ptr<BatchCallback>) override{};
 
  private:
-  MessageCallbackFunction message_callback_;
+  MessageCallback message_callback_;
   Callback callback_;
 };
 

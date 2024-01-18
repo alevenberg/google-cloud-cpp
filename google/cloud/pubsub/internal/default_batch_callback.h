@@ -58,10 +58,7 @@ class DefaultBatchCallback : public BatchCallback {
       std::string ack_id) override {
     return std::make_shared<NoopSubscribeData>();
   }
-  std::shared_ptr<SubscribeData> GetSubscribeDataFromMessageId(
-      std::string message_id) override {
-    return std::make_shared<NoopSubscribeData>();
-  }  
+
  private:
   Callback callback_;
 };

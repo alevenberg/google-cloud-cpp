@@ -59,8 +59,6 @@ class BatchCallback {
 
   virtual std::shared_ptr<SubscribeData> GetSubscribeDataFromAckId(
       std::string ack_id) = 0;
-  virtual std::shared_ptr<SubscribeData> GetSubscribeDataFromMessageId(
-      std::string message_id) = 0;
 };
 
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_END
