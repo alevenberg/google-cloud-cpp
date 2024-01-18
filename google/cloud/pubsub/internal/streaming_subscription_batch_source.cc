@@ -407,6 +407,7 @@ void StreamingSubscriptionBatchSource::OnRead(
       }
     }
     lk.unlock();
+    // callback-> get subscribe?
     callback_->operator()(*std::move(response));
     cq_.RunAsync([weak, update_stream_deadline] {
       auto self = weak.lock();
