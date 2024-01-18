@@ -32,7 +32,7 @@ GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
 
 class SubscriptionConcurrencyControlSource {
  public:
-  virtual void Start(std::unique_ptr<MessageCallback>) = 0;
+  virtual void Start(std::shared_ptr<MessageCallback>) = 0;
   virtual void Shutdown() = 0;
   virtual future<Status> AckMessage(std::string const& ack_id) = 0;
   virtual future<Status> NackMessage(std::string const& ack_id) = 0;

@@ -148,7 +148,18 @@ class TracingBatchCallback : public BatchCallback {
       }
     }
   }
-
+  std::shared_ptr<SubscribeData> GetSubscribeDataFromMessageId(
+      std::string message_id) override {
+    {
+      std::lock_guard<std::mutex> lk(mu_);
+      if (message_id_by_subscribe_span_.find(message_id) !=
+          message_id_by_subscribe_span_.end()) {
+        auto subscribe_span = message_id_by_subscribe_span_[message_id];
+        return std::make_shared<TracingSubscribeData>(subscribe_span);
+      }
+    }
+    return std::make_shared<NoopSubscribeData>();
+  } 
   std::shared_ptr<SubscribeData> GetSubscribeDataFromAckId(
       std::string ack_id) override {
     {

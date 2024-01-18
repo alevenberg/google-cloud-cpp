@@ -34,14 +34,16 @@ GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
  * Define the interface to receive a single message from Cloud Pub/Sub.
  */
 class MessageCallback {
- public:
+      public:
+   using MessageCallbackFunction =
+      std::function<void(google::pubsub::v1::ReceivedMessage)>;
   virtual ~MessageCallback() = default;
 
   virtual void operator()(
       pubsub::Message,
       std::unique_ptr<pubsub::ExactlyOnceAckHandler::Impl>) = 0;
   virtual void operator()(google::pubsub::v1::ReceivedMessage) = 0;
-
+   virtual void SaveMessageCallback(MessageCallbackFunction message_callback) = 0;
   virtual void SaveBatchCallback(std::shared_ptr<BatchCallback> cb) = 0;
 };
 
