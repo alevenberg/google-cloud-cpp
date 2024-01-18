@@ -45,18 +45,7 @@ class TracingMessageCallback : public MessageCallback {
   void operator()(
       pubsub::Message m,
       std::unique_ptr<pubsub::ExactlyOnceAckHandler::Impl> ack) override {
-    namespace sc = opentelemetry::trace::SemanticConventions;
-    opentelemetry::trace::StartSpanOptions options;
-    options.kind = opentelemetry::trace::SpanKind::kClient;
-    // options.parent = subscribe_span_->GetContext();
-    auto span = internal::MakeSpan(
-        "subscriber scheduler ",
-        {{sc::kMessagingSystem, "gcp_pubsub"},
-         {sc::kCodeFunction, "pubsub::SubscriptionMessageQueue::Read"}},
-        options);
-    auto scope = internal::OTelScope(span);
     child_->operator()(std::move(m), std::move(ack));
-    span->End();
   };
 
   void operator()(google::pubsub::v1::ReceivedMessage m) override {
@@ -70,7 +59,7 @@ class TracingMessageCallback : public MessageCallback {
       if (data->has_subscribe_span()) {
         std::shared_ptr<TracingSubscribeData> tracing =
             std::dynamic_pointer_cast<TracingSubscribeData>(data);
-        subscribe_span_ = tracing->get_subscribe_span();
+            subscribe_span_ = tracing->get_subscribe_span(); 
         options.parent = subscribe_span_->GetContext();
       }
     }

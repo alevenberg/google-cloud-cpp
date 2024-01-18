@@ -34,7 +34,6 @@ void SubscriptionMessageQueue::Start(std::unique_ptr<MessageCallback> cb) {
   auto weak = std::weak_ptr<SubscriptionMessageQueue>(shared_from_this());
   std::shared_ptr<BatchCallback> callback =
       std::make_shared<DefaultBatchCallback>(
-        // receive the Span object
           [weak](StatusOr<google::pubsub::v1::StreamingPullResponse> r) {
             if (auto self = weak.lock()) self->OnRead(std::move(r));
           });
@@ -78,7 +77,7 @@ void SubscriptionMessageQueue::OnRead(
   }
   OnRead(std::move(lk), *std::move(r));
 }
-// add the batch spans needed and insert into runnable_messages_
+
 void SubscriptionMessageQueue::OnRead(
     std::unique_lock<std::mutex> lk,
     google::pubsub::v1::StreamingPullResponse r) {
@@ -146,7 +145,6 @@ void SubscriptionMessageQueue::Shutdown(std::unique_lock<std::mutex> lk) {
 }
 
 void SubscriptionMessageQueue::DrainQueue(std::unique_lock<std::mutex> lk) {
-  // runnable messages+ the wrapped span
   while (!runnable_messages_.empty() && available_slots_ > 0 && !shutdown_) {
     auto m = std::move(runnable_messages_.front());
     runnable_messages_.pop_front();

@@ -21,7 +21,6 @@
 #include "google/cloud/pubsub/internal/subscription_lease_management.h"
 #include "google/cloud/pubsub/internal/subscription_message_queue.h"
 #include "google/cloud/pubsub/internal/tracing_subscription_message_queue.h"
-#include "google/cloud/pubsub/internal/tracing_message_callback.h"
 #include "google/cloud/log.h"
 #include "google/cloud/opentelemetry_options.h"
 
@@ -75,7 +74,6 @@ class SubscriptionSessionImpl
       std::shared_ptr<SessionShutdownManager> shutdown_manager,
       std::shared_ptr<SubscriptionBatchSource> source,
       pubsub::ApplicationCallback application_callback) {
-    auto otel = opts.get<OpenTelemetryTracingOption>();
     std::unique_ptr<MessageCallback> callback =
         std::make_unique<DefaultMessageCallback>(
             [cb = std::move(application_callback)](
@@ -85,9 +83,6 @@ class SubscriptionSessionImpl
                   std::move(h), m.message_id());
               cb(std::move(m), pubsub::AckHandler(std::move(wrapper)));
             });
-    if (otel) {
-      callback = std::make_unique<TracingMessageCallback>(std::move(callback));
-    }
     return Create(opts, std::move(cq), std::move(shutdown_manager),
                   std::move(source), std::move(callback));
   }
@@ -97,7 +92,6 @@ class SubscriptionSessionImpl
       std::shared_ptr<SessionShutdownManager> shutdown_manager,
       std::shared_ptr<SubscriptionBatchSource> source,
       pubsub::ExactlyOnceApplicationCallback application_callback) {
-    auto otel = opts.get<OpenTelemetryTracingOption>();
     std::unique_ptr<MessageCallback> callback =
         std::make_unique<DefaultMessageCallback>(
             [cb = std::move(application_callback)](
@@ -105,9 +99,6 @@ class SubscriptionSessionImpl
                 std::unique_ptr<ExactlyOnceAckHandler::Impl> h) {
               cb(std::move(m), pubsub::ExactlyOnceAckHandler(std::move(h)));
             });
-    if (otel) {
-      callback = std::make_unique<TracingMessageCallback>(std::move(callback));
-    }
     return Create(opts, std::move(cq), std::move(shutdown_manager),
                   std::move(source), std::move(callback));
   }

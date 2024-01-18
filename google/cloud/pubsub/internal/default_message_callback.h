@@ -27,7 +27,6 @@ GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
 
 /**
  * Default implementation.
- * Add a child here?
  */
 class DefaultMessageCallback : public MessageCallback {
  public:
