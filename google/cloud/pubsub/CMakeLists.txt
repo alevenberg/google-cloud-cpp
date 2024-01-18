@@ -137,6 +137,7 @@ add_library(
     internal/flow_controlled_publisher_connection.h
     internal/flow_controlled_publisher_tracing_connection.cc
     internal/flow_controlled_publisher_tracing_connection.h
+    internal/message_batch.h
     internal/message_callback.h
     internal/message_carrier.cc
     internal/message_carrier.h
@@ -222,6 +223,8 @@ add_library(
     internal/subscription_message_source.h
     internal/subscription_session.cc
     internal/subscription_session.h
+    internal/tracing_ack_handler.cc
+    internal/tracing_ack_handler.h
     internal/tracing_batch_callback.h
     internal/tracing_batch_sink.cc
     internal/tracing_batch_sink.h

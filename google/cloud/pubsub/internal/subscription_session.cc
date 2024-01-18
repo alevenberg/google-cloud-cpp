@@ -16,6 +16,7 @@
 #include "google/cloud/pubsub/ack_handler.h"
 #include "google/cloud/pubsub/exactly_once_ack_handler.h"
 #include "google/cloud/pubsub/internal/ack_handler_wrapper.h"
+#include "google/cloud/pubsub/internal/tracing_ack_handler.h"
 #include "google/cloud/pubsub/internal/default_message_callback.h"
 #include "google/cloud/pubsub/internal/streaming_subscription_batch_source.h"
 #include "google/cloud/pubsub/internal/subscription_lease_management.h"
@@ -74,6 +75,8 @@ class SubscriptionSessionImpl
       std::shared_ptr<SessionShutdownManager> shutdown_manager,
       std::shared_ptr<SubscriptionBatchSource> source,
       pubsub::ApplicationCallback application_callback) {
+          auto const& current = internal::CurrentOptions();
+  auto otel = current.get<OpenTelemetryTracingOption>();
     std::unique_ptr<MessageCallback> callback =
         std::make_unique<DefaultMessageCallback>(
             [cb = std::move(application_callback)](
@@ -81,6 +84,9 @@ class SubscriptionSessionImpl
                 std::unique_ptr<pubsub::ExactlyOnceAckHandler::Impl> h) {
               auto wrapper = std::make_unique<AckHandlerWrapper>(
                   std::move(h), m.message_id());
+              if (otel) {
+                wrapper = std::make_unique<TracingAckHandler>(std::move(wrapper));
+              }
               cb(std::move(m), pubsub::AckHandler(std::move(wrapper)));
             });
     return Create(opts, std::move(cq), std::move(shutdown_manager),

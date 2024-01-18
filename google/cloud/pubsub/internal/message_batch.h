@@ -12,17 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_SUBSCRIPTION_CONCURRENCY_CONTROL_SOURCE_H
-#define GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_SUBSCRIPTION_CONCURRENCY_CONTROL_SOURCE_H
+#ifndef GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_MESSAGE_BATCH_H
+#define GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_MESSAGE_BATCH_H
 
-#include "google/cloud/pubsub/exactly_once_ack_handler.h"
-#include "google/cloud/pubsub/internal/message_callback.h"
-#include "google/cloud/pubsub/internal/session_shutdown_manager.h"
-#include "google/cloud/pubsub/internal/subscription_message_source.h"
 #include "google/cloud/pubsub/message.h"
 #include "google/cloud/pubsub/version.h"
-#include <functional>
-#include <memory>
+#include "google/cloud/completion_queue.h"
+#include "google/cloud/future.h"
+#include "google/cloud/status_or.h"
+#include <google/pubsub/v1/pubsub.pb.h>
 #include <string>
 
 namespace google {
@@ -30,17 +28,14 @@ namespace cloud {
 namespace pubsub_internal {
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
 
-class SubscriptionConcurrencyControlSource {
- public:
-  virtual void Start(std::unique_ptr<MessageCallback>) = 0;
-  virtual void Shutdown() = 0;
-  virtual future<Status> AckMessage(std::string const& ack_id) = 0;
-  virtual future<Status> NackMessage(std::string const& ack_id) = 0;
-};
+/**
+ * Define the interface to push message batches to Cloud Pub/Sub.
+ */
+struct MessageBatch {};
 
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_END
 }  // namespace pubsub_internal
 }  // namespace cloud
 }  // namespace google
 
-#endif  // GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_SUBSCRIPTION_CONCURRENCY_CONTROL_SOURCE_H
+#endif  // GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_MESSAGE_BATCH_H

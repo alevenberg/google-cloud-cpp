@@ -59,7 +59,7 @@ class TracingMessageCallback : public MessageCallback {
       if (data->has_subscribe_span()) {
         std::shared_ptr<TracingSubscribeData> tracing =
             std::dynamic_pointer_cast<TracingSubscribeData>(data);
-            subscribe_span_ = tracing->get_subscribe_span(); 
+        subscribe_span_ = tracing->get_subscribe_span();
         options.parent = subscribe_span_->GetContext();
       }
     }

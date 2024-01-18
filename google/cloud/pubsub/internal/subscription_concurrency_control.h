@@ -16,10 +16,10 @@
 #define GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_SUBSCRIPTION_CONCURRENCY_CONTROL_H
 
 #include "google/cloud/pubsub/exactly_once_ack_handler.h"
+#include "google/cloud/pubsub/internal/message_callback.h"
 #include "google/cloud/pubsub/internal/session_shutdown_manager.h"
 #include "google/cloud/pubsub/internal/subscription_concurrency_control_source.h"
 #include "google/cloud/pubsub/internal/subscription_message_source.h"
-#include "google/cloud/pubsub/internal/message_callback.h"
 #include "google/cloud/pubsub/message.h"
 #include "google/cloud/pubsub/version.h"
 #include <functional>
@@ -46,7 +46,7 @@ class SubscriptionConcurrencyControl
                                            std::move(source), max_concurrency));
   }
 
-  void Start(std::unique_ptr<MessageCallback> ) override;
+  void Start(std::unique_ptr<MessageCallback>) override;
   void Shutdown() override;
   future<Status> AckMessage(std::string const& ack_id) override;
   future<Status> NackMessage(std::string const& ack_id) override;
@@ -81,7 +81,7 @@ class SubscriptionConcurrencyControl
   std::size_t const max_concurrency_;
 
   std::mutex mu_;
-  std::unique_ptr<MessageCallback>  callback_;
+  std::unique_ptr<MessageCallback> callback_;
   std::size_t message_count_ = 0;
   std::size_t messages_requested_ = 0;
 };
