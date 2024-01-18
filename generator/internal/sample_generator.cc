@@ -214,6 +214,84 @@ void WithServiceAccount(std::vector<std::string> const& argv) {
   (argv.at(0));
 }
 
+void SetPollingPolicy(std::vector<std::string> const& argv) {
+  if (!argv.empty()) {
+    throw google::cloud::testing_util::Usage{"set-client-polling-policy"};
+  }
+  //! [set-polling-policy]
+  auto options = google::cloud::Options{}
+    .set<google::cloud::$product_namespace$::$idempotency_class_name$Option>(
+      CustomIdempotencyPolicy().clone())
+    .set<google::cloud::$product_namespace$::$retry_policy_name$Option>(
+      google::cloud::$product_namespace$::$limited_error_count_retry_policy_name$(3).clone())
+    .set<google::cloud::$product_namespace$::$polling_policy_name$Option>(
+      google::cloud::$product_namespace$::$limited_error_count_retry_policy_name$(3).clone())
+    .set<google::cloud::$product_namespace$::$service_name$BackoffPolicyOption>(
+      google::cloud::ExponentialBackoffPolicy(
+          /*initial_delay=*/std::chrono::milliseconds(200),
+          /*maximum_delay=*/std::chrono::seconds(45),
+          /*scaling=*/2.0).clone());)""");
+  if (HasGenerateGrpcTransport()) {
+    HeaderPrint(R"""(
+  auto connection = google::cloud::$product_namespace$::Make$connection_class_name$()""");
+  } else {
+    HeaderPrint(R"""(
+  auto connection = google::cloud::$product_namespace$::Make$connection_class_name$Rest()""");
+  }
+  if (IsExperimental()) HeaderPrint("google::cloud::ExperimentalTag{}, ");
+  switch (endpoint_location_style) {
+    case ServiceConfiguration::LOCATION_DEPENDENT:
+      HeaderPrint(R"""("location-unused-in-this-example", )""");
+      break;
+    case ServiceConfiguration::LOCATION_DEPENDENT_COMPAT:
+    default:
+      break;
+  }
+  HeaderPrint(R"""(options);)""");
+  if (IsExperimental()) {
+    HeaderPrint(R"""(
+
+  // c1 and c2 share the same retry policies
+  auto c1 = google::cloud::$product_namespace$::$client_class_name$(
+    google::cloud::ExperimentalTag{}, connection);
+  auto c2 = google::cloud::$product_namespace$::$client_class_name$(
+    google::cloud::ExperimentalTag{}, connection);
+
+  // You can override any of the policies in a new client. This new client
+  // will share the policies from c1 (or c2) *except* for the retry policy.
+  auto c3 = google::cloud::$product_namespace$::$client_class_name$(
+    google::cloud::ExperimentalTag{}, connection,
+    google::cloud::Options{}.set<google::cloud::$product_namespace$::$retry_policy_name$Option>(
+      google::cloud::$product_namespace$::$limited_time_retry_policy_name$(std::chrono::minutes(5)).clone()));
+
+  // You can also override the policies in a single call:
+  // c3.SomeRpc(..., google::cloud::Options{}
+  //     .set<google::cloud::$product_namespace$::$retry_policy_name$Option>(
+  //       google::cloud::$product_namespace$::$limited_error_count_retry_policy_name$(10).clone()));
+  //! [set-retry-policy]
+}
+)""");
+  } else
+    HeaderPrint(R"""(
+
+  // c1 and c2 share the same retry policies
+  auto c1 = google::cloud::$product_namespace$::$client_class_name$(connection);
+  auto c2 = google::cloud::$product_namespace$::$client_class_name$(connection);
+
+  // You can override any of the policies in a new client. This new client
+  // will share the policies from c1 (or c2) *except* for the retry policy.
+  auto c3 = google::cloud::$product_namespace$::$client_class_name$(
+    connection, google::cloud::Options{}.set<google::cloud::$product_namespace$::$retry_policy_name$Option>(
+      google::cloud::$product_namespace$::$limited_time_retry_policy_name$(std::chrono::minutes(5)).clone()));
+
+  // You can also override the policies in a single call:
+  // c3.SomeRpc(..., google::cloud::Options{}
+  //     .set<google::cloud::$product_namespace$::$retry_policy_name$Option>(
+  //       google::cloud::$product_namespace$::$limited_error_count_retry_policy_name$(10).clone()));
+  //! [set-polling-policy]
+}
+)""");
+  HeaderPrint(R"""(
 void AutoRun(std::vector<std::string> const& argv) {
   namespace examples = ::google::cloud::testing_util;
   using ::google::cloud::internal::GetEnv;
