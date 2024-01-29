@@ -162,9 +162,10 @@ void TopicAdminClientSetEndpoint(std::vector<std::string> const& argv) {
   }
   //! [topic-admin-client-set-endpoint]
   namespace pubsub = ::google::cloud::pubsub;
+  namespace pubsub_admin = ::google::cloud::pubsub_admin;
   using ::google::cloud::Options;
   []() {
-    return pubsub::TopicAdminClient(pubsub::MakeTopicAdminConnection(
+    return pubsub_admin::TopicAdminClient(pubsub::MakeTopicAdminConnection(
         Options{}.set<google::cloud::EndpointOption>(
             "private.googleapis.com")));
   }
@@ -179,13 +180,14 @@ void TopicAdminClientServiceAccountKey(std::vector<std::string> const& argv) {
   }
   //! [topic-admin-client-service-account]
   namespace pubsub = ::google::cloud::pubsub;
+  namespace pubsub_admin = ::google::cloud::pubsub_admin;
   using ::google::cloud::Options;
   [](std::string const& keyfile) {
     auto is = std::ifstream(keyfile);
     is.exceptions(std::ios::badbit);
     auto contents = std::string(std::istreambuf_iterator<char>(is.rdbuf()), {});
     std::cerr << "DEBUG\n" << keyfile << "\nDEBUG\n";
-    return pubsub::TopicAdminClient(pubsub::MakeTopicAdminConnection(
+    return pubsub_admin::TopicAdminClient(pubsub::MakeTopicAdminConnection(
         Options{}.set<google::cloud::UnifiedCredentialsOption>(
             google::cloud::MakeServiceAccountCredentials(contents))));
   }

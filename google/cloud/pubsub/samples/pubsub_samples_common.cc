@@ -14,6 +14,7 @@
 
 #include "google/cloud/pubsub/samples/pubsub_samples_common.h"
 #include "google/cloud/pubsub/testing/random_names.h"
+#include "google/cloud/pubsub/schema.h"
 #include "google/cloud/internal/getenv.h"
 #include "google/cloud/internal/time_utils.h"
 #include "google/cloud/project.h"
@@ -87,8 +88,8 @@ google::cloud::testing_util::Commands::value_type CreateTopicAdminCommand(
       }
       throw google::cloud::testing_util::Usage{std::move(os).str()};
     }
-    google::cloud::pubsub::TopicAdminClient client(
-        google::cloud::pubsub::MakeTopicAdminConnection());
+    google::cloud::pubsub_admin::TopicAdminClient client(
+        google::cloud::pubsub_admin::MakeTopicAdminConnection());
     command(std::move(client), std::move(argv));
   };
   return google::cloud::testing_util::Commands::value_type{name,

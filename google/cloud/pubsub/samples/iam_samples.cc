@@ -219,7 +219,7 @@ void AutoRun(std::vector<std::string> const& argv) {
   auto const topic_id = RandomTopicId(generator);
   auto const subscription_id = RandomSubscriptionId(generator);
   auto topic_admin_client =
-      pubsub::TopicAdminClient(pubsub::MakeTopicAdminConnection());
+      pubsub_admin::TopicAdminClient(pubsub::MakeTopicAdminConnection());
   auto subscription_admin_client = pubsub::SubscriptionAdminClient(
       pubsub::MakeSubscriptionAdminConnection());
 

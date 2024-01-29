@@ -96,7 +96,7 @@ TEST(PubSubSamplesCommon, TopicAdminCommand) {
   google::cloud::testing_util::ScopedEnvironment emulator(
       "PUBSUB_EMULATOR_HOST", "localhost:8085");
   int call_count = 0;
-  auto command = [&call_count](pubsub::TopicAdminClient const&,
+  auto command = [&call_count](pubsub_admin::TopicAdminClient const&,
                                std::vector<std::string> const& argv) {
     ++call_count;
     ASSERT_EQ(2, argv.size());

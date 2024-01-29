@@ -82,7 +82,7 @@ void AutoRun(std::vector<std::string> const& argv) {
   auto const topic_id = RandomTopicId(generator);
   auto const topic = google::cloud::pubsub::Topic(project_id, topic_id);
 
-  google::cloud::pubsub::TopicAdminClient topic_admin_client(
+  google::cloud::pubsub_admin::TopicAdminClient topic_admin_client(
       google::cloud::pubsub::MakeTopicAdminConnection());
 
   std::cout << "\nCreateTopic()" << std::endl;
