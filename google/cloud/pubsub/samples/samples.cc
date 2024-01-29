@@ -275,7 +275,6 @@ void ListTopicSnapshots(google::cloud::pubsub::TopicAdminClient client,
 
 void CreateSubscription(google::cloud::pubsub::SubscriptionAdminClient client,
                         std::vector<std::string> const& argv) {
-  //! [START pubsub_create_pull_subscription] [create-subscription]
   namespace pubsub = ::google::cloud::pubsub;
   [](pubsub::SubscriptionAdminClient client, std::string const& project_id,
      std::string const& topic_id, std::string const& subscription_id) {
@@ -290,9 +289,7 @@ void CreateSubscription(google::cloud::pubsub::SubscriptionAdminClient client,
 
     std::cout << "The subscription was successfully created: "
               << sub->DebugString() << "\n";
-  }
-  //! [END pubsub_create_pull_subscription] [create-subscription]
-  (std::move(client), argv.at(0), argv.at(1), argv.at(2));
+  }(std::move(client), argv.at(0), argv.at(1), argv.at(2));
 }
 
 void CreateSubscriptionWithExactlyOnceDelivery(
@@ -649,7 +646,6 @@ void ListSubscriptions(google::cloud::pubsub::SubscriptionAdminClient client,
 
 void DeleteSubscription(google::cloud::pubsub::SubscriptionAdminClient client,
                         std::vector<std::string> const& argv) {
-  //! [START pubsub_delete_subscription] [delete-subscription]
   namespace pubsub = ::google::cloud::pubsub;
   [](pubsub::SubscriptionAdminClient client, std::string const& project_id,
      std::string const& subscription_id) {
@@ -663,9 +659,7 @@ void DeleteSubscription(google::cloud::pubsub::SubscriptionAdminClient client,
     if (!status.ok()) throw std::runtime_error(status.message());
 
     std::cout << "The subscription was successfully deleted\n";
-  }
-  //! [END pubsub_delete_subscription] [delete-subscription]
-  (std::move(client), argv.at(0), argv.at(1));
+  }(std::move(client), argv.at(0), argv.at(1));
 }
 
 void ModifyPushConfig(google::cloud::pubsub::SubscriptionAdminClient client,
