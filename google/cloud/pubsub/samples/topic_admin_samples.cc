@@ -72,6 +72,32 @@ void CreateTopic(google::cloud::pubsub_admin::TopicAdminClient client,
   (std::move(client), argv.at(0), argv.at(1));
 }
 
+void CreateTopicWithKinesisIngestion(
+    google::cloud::pubsub_admin::TopicAdminClient client,
+    std::vector<std::string> const& argv) {
+  //! [pubsub_create_topic_with_kinesis_ingestion]
+  namespace pubsub = ::google::cloud::pubsub;
+  namespace pubsub_admin = ::google::cloud::pubsub_admin;
+  [](pubsub_admin::TopicAdminClient client, std::string project_id,
+     std::string topic_id) {
+    google::pubsub::v1::Topic topic;
+    topic.set_name(
+        pubsub::Topic(std::move(project_id), std::move(topic_id)).FullName());
+    topic.mutable_ingestion_data_source_settings()->set_gcp_service_account();
+    auto topic = client.CreateTopic(topic);
+    // Note that kAlreadyExists is a possible error when the library retries.
+    if (topic.status().code() == google::cloud::StatusCode::kAlreadyExists) {
+      std::cout << "The topic already exists\n";
+      return;
+    }
+    if (!topic) throw std::move(topic).status();
+
+    std::cout << "The topic was successfully created: " << topic->DebugString()
+              << "\n";
+  }
+  //! [pubsub_create_topic_with_kinesis_ingestion]
+  (std::move(client), argv.at(0), argv.at(1));
+}
 void DeleteTopic(google::cloud::pubsub_admin::TopicAdminClient client,
                  std::vector<std::string> const& argv) {
   //! [delete-topic]
