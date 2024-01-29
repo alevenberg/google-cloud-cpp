@@ -43,7 +43,7 @@ google::cloud::testing_util::Commands::value_type CreateSubscriberCommand(
     std::string const& name, std::vector<std::string> const& arg_names,
     SubscriberCommand const& command);
 
-using TopicAdminCommand = std::function<void(pubsub::TopicAdminClient,
+using TopicAdminCommand = std::function<void(pubsub_admin::TopicAdminClient,
                                              std::vector<std::string> const&)>;
 
 google::cloud::testing_util::Commands::value_type CreateTopicAdminCommand(
