@@ -34,7 +34,8 @@ void SubscriptionMessageQueue::Start(std::unique_ptr<MessageCallback> cb) {
   auto weak = std::weak_ptr<SubscriptionMessageQueue>(shared_from_this());
   std::shared_ptr<BatchCallback> callback =
       std::make_shared<DefaultBatchCallback>(
-          [weak](StatusOr<google::pubsub::v1::StreamingPullResponse> r) {
+          [weak](StatusOr<google::pubsub::v1::StreamingPullResponse> r,
+                 absl::optional<absl::any> subscription_span) {
             if (auto self = weak.lock()) self->OnRead(std::move(r));
           });
   if (otel) {

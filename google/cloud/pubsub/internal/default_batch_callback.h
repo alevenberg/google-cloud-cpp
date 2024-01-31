@@ -31,15 +31,16 @@ GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
 class DefaultBatchCallback : public BatchCallback {
  public:
   using Callback =
-      std::function<void(StatusOr<google::pubsub::v1::StreamingPullResponse>)>;
+      std::function<void(StatusOr<google::pubsub::v1::StreamingPullResponse>,
+                  absl::optional<absl::any> subscription_span)>;
 
   explicit DefaultBatchCallback(Callback callback)
       : callback_(std::move(callback)) {}
   ~DefaultBatchCallback() override = default;
 
-  void operator()(
-      StatusOr<google::pubsub::v1::StreamingPullResponse> response) override {
-    callback_(std::move(response));
+  void operator()(StatusOr<google::pubsub::v1::StreamingPullResponse> response,
+                  absl::optional<absl::any> subscription_span) override {
+    callback_(std::move(response), std::move(subscription_span));
   };
 
   void AckMessage(std::string const& ack_id) override{};

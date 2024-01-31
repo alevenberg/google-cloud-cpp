@@ -22,6 +22,8 @@
 #include "google/cloud/future.h"
 #include "google/cloud/status_or.h"
 #include <google/pubsub/v1/pubsub.pb.h>
+#include "absl/types/any.h"
+#include "absl/types/optional.h"
 #include <string>
 
 namespace google {
@@ -37,7 +39,7 @@ class BatchCallback {
   virtual ~BatchCallback() = default;
 
   virtual void operator()(
-      StatusOr<google::pubsub::v1::StreamingPullResponse> response) = 0;
+      StatusOr<google::pubsub::v1::StreamingPullResponse> response, absl::optional<absl::any> subscription_span) = 0;
 
   // Add a function to add the ack event
   virtual void AckMessage(std::string const& ack_id) = 0;

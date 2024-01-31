@@ -31,7 +31,8 @@ GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
 class BatchCallbackWrapper : public BatchCallback {
  public:
   using Callback =
-      std::function<void(StatusOr<google::pubsub::v1::StreamingPullResponse>)>;
+      std::function<void(StatusOr<google::pubsub::v1::StreamingPullResponse>,
+                  absl::optional<absl::any> subscription_span)>;
 
   explicit BatchCallbackWrapper(std::shared_ptr<BatchCallback> child,
                                 Callback wrapper)
@@ -39,9 +40,10 @@ class BatchCallbackWrapper : public BatchCallback {
   ~BatchCallbackWrapper() override = default;
 
   void operator()(
-      StatusOr<google::pubsub::v1::StreamingPullResponse> response) override {
-    wrapper_(response);
-    child_->operator()(std::move(response));
+      StatusOr<google::pubsub::v1::StreamingPullResponse> response,
+                  absl::optional<absl::any> subscription_span) override {
+    wrapper_(response, subscription_span);
+    child_->operator()(std::move(response), std::move(subscription_span));
   };
   void AckMessage(std::string const& ack_id) override {
     child_->AckMessage(ack_id);

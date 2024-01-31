@@ -85,7 +85,8 @@ class TracingBatchCallback : public BatchCallback {
   ~TracingBatchCallback() override = default;
 
   void operator()(
-      StatusOr<google::pubsub::v1::StreamingPullResponse> response) override {
+      StatusOr<google::pubsub::v1::StreamingPullResponse> response,
+                  absl::optional<absl::any> subscription_span) override {
     if (response) {
       for (auto const& message : response->received_messages()) {
         auto subscribe_span = StartSubscribeSpan(message, propagator_);
@@ -99,7 +100,7 @@ class TracingBatchCallback : public BatchCallback {
       }
     }
 
-    child_->operator()(std::move(response));
+    child_->operator()(std::move(response), std::move(subscription_span));
   };
 
   void AckMessage(std::string const& ack_id) override {
