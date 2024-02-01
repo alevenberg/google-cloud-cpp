@@ -84,12 +84,11 @@ class TracingBatchCallback : public BatchCallback {
                     opentelemetry::trace::propagation::HttpTraceContext>()) {}
   ~TracingBatchCallback() override = default;
 
-  void operator()(StatusOr<google::pubsub::v1::StreamingPullResponse> response,
-                  absl::optional<absl::any> subscription_span) override {
+  void operator()(StreamingPullResponse response) override {
     std::vector<opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span>>
         spans;
-    if (response) {
-      for (auto const& message : response->received_messages()) {
+    if (response.response) {
+      for (auto const& message : response.response->received_messages()) {
         auto subscribe_span = StartSubscribeSpan(message, propagator_);
         auto scope = internal::OTelScope(subscribe_span);
         std::lock_guard<std::mutex> lk(mu_);
@@ -102,7 +101,7 @@ class TracingBatchCallback : public BatchCallback {
       }
     }
 
-    child_->operator()(std::move(response), std::move(absl::any(spans)));
+    child_->operator()(std::move(response));
   };
 
   void AckMessage(std::string const& ack_id) override {

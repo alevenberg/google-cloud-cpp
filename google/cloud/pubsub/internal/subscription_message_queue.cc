@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "google/cloud/pubsub/internal/subscription_message_queue.h"
+#include "google/cloud/pubsub/internal/batch_callback.h"
 #include "google/cloud/pubsub/internal/default_batch_callback.h"
 #include "google/cloud/pubsub/internal/tracing_batch_callback.h"
 #include "google/cloud/pubsub/message.h"
@@ -33,11 +34,12 @@ void SubscriptionMessageQueue::Start(std::unique_ptr<MessageCallback> cb) {
   auto otel = current.get<OpenTelemetryTracingOption>();
   auto weak = std::weak_ptr<SubscriptionMessageQueue>(shared_from_this());
   std::shared_ptr<BatchCallback> callback =
-      std::make_shared<DefaultBatchCallback>(
-          [weak](StatusOr<google::pubsub::v1::StreamingPullResponse> r,
-                 absl::optional<absl::any> subscription_span) {
-            if (auto self = weak.lock()) self->OnRead(std::move(r));
-          });
+      std::make_shared<DefaultBatchCallback>([weak](BatchCallback::StreamingPullResponse r) {
+        // optionally pass in the span map.
+        // if exists set it on the struct here.
+        // std::vector<ReceivedMessages>
+        if (auto self = weak.lock()) self->OnRead(std::move(r.response));
+      });
   if (otel) {
     callback = std::make_shared<TracingBatchCallback>(std::move(callback));
   }

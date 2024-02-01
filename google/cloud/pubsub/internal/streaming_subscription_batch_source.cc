@@ -374,7 +374,7 @@ void StreamingSubscriptionBatchSource::OnBackoff(RetryLoopState rs,
 void StreamingSubscriptionBatchSource::OnRetryFailure(Status status) {
   if (shutdown_manager_->FinishedOperation("stream")) return;
   shutdown_manager_->MarkAsShutdown(__func__, status);
-  callback_->operator()(std::move(status), absl::nullopt);
+  callback_->operator()(BatchCallback::StreamingPullResponse{std::move(status), absl::nullopt});
 }
 
 void StreamingSubscriptionBatchSource::ReadLoop() {
@@ -407,7 +407,8 @@ void StreamingSubscriptionBatchSource::OnRead(
       }
     }
     lk.unlock();
-    callback_->operator()(*std::move(response), absl::nullopt);
+    callback_->operator()(
+        BatchCallback::StreamingPullResponse{*std::move(response), absl::nullopt});
     cq_.RunAsync([weak, update_stream_deadline] {
       auto self = weak.lock();
       if (!self) return;

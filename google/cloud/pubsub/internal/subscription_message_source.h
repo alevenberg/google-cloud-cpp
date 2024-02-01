@@ -39,6 +39,13 @@ class SubscriptionMessageSource {
  public:
   virtual ~SubscriptionMessageSource() = default;
 
+  struct ReceivedMessage {
+    // A batch of messages received.
+    google::pubsub::v1::ReceivedMessage message;
+    // A single subscribe span, if it exists.
+    absl::optional<absl::any> subscribe_span;
+  };
+
   /// Start the source, set up the callback. Calling multiple times should have
   /// no effect, only the first callback is used.
   virtual void Start(std::unique_ptr<MessageCallback>) = 0;
