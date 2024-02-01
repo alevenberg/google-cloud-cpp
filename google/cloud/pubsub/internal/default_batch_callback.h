@@ -32,7 +32,7 @@ class DefaultBatchCallback : public BatchCallback {
  public:
   using Callback =
       std::function<void(StatusOr<google::pubsub::v1::StreamingPullResponse>,
-                  absl::optional<absl::any> subscription_span)>;
+                         absl::optional<absl::any> subscription_span)>;
 
   explicit DefaultBatchCallback(Callback callback)
       : callback_(std::move(callback)) {}

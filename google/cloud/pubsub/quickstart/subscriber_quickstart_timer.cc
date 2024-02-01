@@ -89,7 +89,6 @@ int main(int argc, char* argv[]) try {
                         << "\n";
           std::cout << attribute_msg.str();
         }
-        sleep(1);
         // std::move(h).nack();
         std::move(h).ack();
       });

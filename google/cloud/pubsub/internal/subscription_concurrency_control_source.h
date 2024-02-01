@@ -16,11 +16,11 @@
 #define GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_SUBSCRIPTION_CONCURRENCY_CONTROL_SOURCE_H
 
 #include "google/cloud/pubsub/exactly_once_ack_handler.h"
+#include "google/cloud/pubsub/internal/message_callback.h"
 #include "google/cloud/pubsub/internal/session_shutdown_manager.h"
 #include "google/cloud/pubsub/internal/subscription_message_source.h"
 #include "google/cloud/pubsub/message.h"
 #include "google/cloud/pubsub/version.h"
-#include "google/cloud/pubsub/internal/message_callback.h"
 #include <functional>
 #include <memory>
 #include <string>
@@ -32,7 +32,7 @@ GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
 
 class SubscriptionConcurrencyControlSource {
  public:
-  virtual void Start(std::unique_ptr<MessageCallback> ) = 0;
+  virtual void Start(std::unique_ptr<MessageCallback>) = 0;
   virtual void Shutdown() = 0;
   virtual future<Status> AckMessage(std::string const& ack_id) = 0;
   virtual future<Status> NackMessage(std::string const& ack_id) = 0;

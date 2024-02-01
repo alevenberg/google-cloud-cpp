@@ -32,15 +32,14 @@ class BatchCallbackWrapper : public BatchCallback {
  public:
   using Callback =
       std::function<void(StatusOr<google::pubsub::v1::StreamingPullResponse>,
-                  absl::optional<absl::any> subscription_span)>;
+                         absl::optional<absl::any> subscription_span)>;
 
   explicit BatchCallbackWrapper(std::shared_ptr<BatchCallback> child,
                                 Callback wrapper)
       : child_(std::move(child)), wrapper_(std::move(wrapper)) {}
   ~BatchCallbackWrapper() override = default;
 
-  void operator()(
-      StatusOr<google::pubsub::v1::StreamingPullResponse> response,
+  void operator()(StatusOr<google::pubsub::v1::StreamingPullResponse> response,
                   absl::optional<absl::any> subscription_span) override {
     wrapper_(response, subscription_span);
     child_->operator()(std::move(response), std::move(subscription_span));
