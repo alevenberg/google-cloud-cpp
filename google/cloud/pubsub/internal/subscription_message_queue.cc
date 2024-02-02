@@ -34,12 +34,13 @@ void SubscriptionMessageQueue::Start(std::unique_ptr<MessageCallback> cb) {
   auto otel = current.get<OpenTelemetryTracingOption>();
   auto weak = std::weak_ptr<SubscriptionMessageQueue>(shared_from_this());
   std::shared_ptr<BatchCallback> callback =
-      std::make_shared<DefaultBatchCallback>([weak](BatchCallback::StreamingPullResponse r) {
-        // optionally pass in the span map.
-        // if exists set it on the struct here.
-        // std::vector<ReceivedMessages>
-        if (auto self = weak.lock()) self->OnRead(std::move(r.response));
-      });
+      std::make_shared<DefaultBatchCallback>(
+          [weak](BatchCallback::StreamingPullResponse r) {
+            // optionally pass in the span map.
+            // if exists set it on the struct here.
+            // std::vector<ReceivedMessages>
+            if (auto self = weak.lock()) self->OnRead(std::move(r.response));
+          });
   if (otel) {
     callback = std::make_shared<TracingBatchCallback>(std::move(callback));
   }
@@ -90,7 +91,8 @@ void SubscriptionMessageQueue::OnRead(
       auto key = m.message().ordering_key();
       if (key.empty()) {
         // Empty key, requires no ordering and therefore immediately runnable.
-        runnable_messages_.push_back(MessageCallback::ReceivedMessage{std::move(m), absl::nullopt});
+        runnable_messages_.push_back(
+            MessageCallback::ReceivedMessage{std::move(m), absl::nullopt});
         continue;
       }
       // The message requires ordering, find out if there is an existing queue
@@ -101,11 +103,13 @@ void SubscriptionMessageQueue::OnRead(
       // the per-ordering-key queue as a marker for any other incoming messages
       // with the same ordering key.
       if (loc.second) {
-        runnable_messages_.push_back(MessageCallback::ReceivedMessage{std::move(m), absl::nullopt});
+        runnable_messages_.push_back(
+            MessageCallback::ReceivedMessage{std::move(m), absl::nullopt});
         continue;
       }
       // Insert the messages into the existing queue.
-      loc.first->second.push_back(MessageCallback::ReceivedMessage{std::move(m), absl::nullopt});
+      loc.first->second.push_back(
+          MessageCallback::ReceivedMessage{std::move(m), absl::nullopt});
     }
     DrainQueue(std::move(lk));
   };
@@ -160,7 +164,8 @@ void SubscriptionMessageQueue::DrainQueue(std::unique_lock<std::mutex> lk) {
     // Don't hold a lock during the callback, as the callee may call `Read()`
     // or something similar.
     lk.unlock();
-    callback_->operator()(MessageCallback::ReceivedMessage{std::move(m),absl::nullopt} );
+    callback_->operator()(
+        MessageCallback::ReceivedMessage{std::move(m), absl::nullopt});
     lk.lock();
   }
 }
