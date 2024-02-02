@@ -54,9 +54,9 @@ class BatchCallbackWrapper : public BatchCallback {
                     std::chrono::seconds extension) override {
     child_->ExtendLeases(ack_ids, extension);
   }
-  absl::optional<absl::any> GetSubscribeDataFromAckId(
+  std::shared_ptr<SubscribeData> GetSubscribeDataFromAckId(
       std::string ack_id) override {
-    return absl::nullopt;
+    return std::make_shared<NoopSubscribeData>();
   }
 
   void EndAckMessage(std::string const& ack_id) override {

@@ -85,12 +85,15 @@ class TracingBatchCallback : public BatchCallback {
   ~TracingBatchCallback() override = default;
 
   void operator()(StreamingPullResponse response) override {
+    std::vector<opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span>>
+        spans;
     if (response.response) {
       for (auto const& message : response.response->received_messages()) {
         auto subscribe_span = StartSubscribeSpan(message, propagator_);
         auto scope = internal::OTelScope(subscribe_span);
         std::lock_guard<std::mutex> lk(mu_);
         {
+          spans.push_back(subscribe_span);
           message_id_by_subscribe_span_[message.message().message_id()] =
               subscribe_span;
           ack_id_by_subscribe_span_[message.ack_id()] = subscribe_span;
@@ -98,8 +101,7 @@ class TracingBatchCallback : public BatchCallback {
       }
     }
 
-    child_->operator()(BatchCallback::StreamingPullResponse{
-        std::move(response.response), absl::any(ack_id_by_subscribe_span_)});
+    child_->operator()(std::move(response));
   };
 
   void AckMessage(std::string const& ack_id) override {
@@ -149,14 +151,14 @@ class TracingBatchCallback : public BatchCallback {
     }
   }
 
- absl::optional<absl::any> GetSubscribeDataFromAckId(
+  std::shared_ptr<SubscribeData> GetSubscribeDataFromAckId(
       std::string ack_id) override {
     {
       std::lock_guard<std::mutex> lk(mu_);
       if (ack_id_by_subscribe_span_.find(ack_id) !=
           ack_id_by_subscribe_span_.end()) {
         auto subscribe_span = ack_id_by_subscribe_span_[ack_id];
-        return absl::any(subscribe_span);
+        return std::make_shared<TracingSubscribeData>(subscribe_span);
       }
     }
     return std::make_shared<NoopSubscribeData>();

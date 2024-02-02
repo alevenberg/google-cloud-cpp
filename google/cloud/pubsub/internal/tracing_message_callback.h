@@ -27,8 +27,6 @@
 #include "opentelemetry/trace/semantic_conventions.h"
 #include "opentelemetry/trace/span_startoptions.h"
 #include <google/pubsub/v1/pubsub.pb.h>
-#include <absl/types/any.h>
-#include <absl/types/bad_any_cast.h>
 
 namespace google {
 namespace cloud {
@@ -56,17 +54,13 @@ class TracingMessageCallback : public MessageCallback {
     opentelemetry::trace::StartSpanOptions options;
     options.kind = opentelemetry::trace::SpanKind::kClient;
     if (batch_callback_) {
-      auto data =
+      std::shared_ptr<SubscribeData> data =
           batch_callback_->GetSubscribeDataFromAckId(m.message.ack_id());
-      if (data.has_value()) {
-        try {
-          subscribe_span_ = absl::any_cast<
-              opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span>>(
-              data.value());
-          options.parent = subscribe_span_->GetContext();
-        } catch (absl::bad_any_cast const& e) {
-          std::cerr << "Incorrect type in absl::any: " << e.what() << std::endl;
-        }
+      if (data->has_subscribe_span()) {
+        std::shared_ptr<TracingSubscribeData> tracing =
+            std::dynamic_pointer_cast<TracingSubscribeData>(data);
+        subscribe_span_ = tracing->get_subscribe_span();
+        options.parent = subscribe_span_->GetContext();
       }
     }
     auto span = internal::MakeSpan(

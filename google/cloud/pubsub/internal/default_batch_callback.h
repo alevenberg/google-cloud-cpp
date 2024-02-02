@@ -52,9 +52,9 @@ class DefaultBatchCallback : public BatchCallback {
   void EndExtendLeases(std::vector<std::string> ack_ids,
                        std::chrono::seconds extension) override{};
 
-  absl::optional<absl::any> GetSubscribeDataFromAckId(
+  std::shared_ptr<SubscribeData> GetSubscribeDataFromAckId(
       std::string ack_id) override {
-    return absl::nullopt;
+    return std::make_shared<NoopSubscribeData>();
   }
 
  private:

@@ -66,7 +66,7 @@ class BatchCallback {
   virtual void EndExtendLeases(std::vector<std::string> ack_ids,
                                std::chrono::seconds extension) = 0;
 
-  virtual absl::optional<absl::any> GetSubscribeDataFromAckId(
+  virtual std::shared_ptr<SubscribeData> GetSubscribeDataFromAckId(
       std::string ack_id) = 0;
 };
 
