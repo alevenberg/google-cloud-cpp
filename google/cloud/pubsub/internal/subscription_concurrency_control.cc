@@ -64,8 +64,8 @@ void SubscriptionConcurrencyControl::Start(
   auto otel = current.get<OpenTelemetryTracingOption>();
   std::unique_ptr<MessageCallback> callback =
       std::make_unique<DefaultMessageCallback>(
-          [w = WeakFromThis()](google::pubsub::v1::ReceivedMessage r) {
-            if (auto self = w.lock()) self->OnMessage(std::move(r));
+          [w = WeakFromThis()](MessageCallback::ReceivedMessage r) {
+            if (auto self = w.lock()) self->OnMessage(std::move(r.message));
           });
   if (otel) {
     callback = std::make_unique<TracingMessageCallback>(std::move(callback));

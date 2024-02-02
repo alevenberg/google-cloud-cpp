@@ -90,7 +90,7 @@ void SubscriptionMessageQueue::OnRead(
       auto key = m.message().ordering_key();
       if (key.empty()) {
         // Empty key, requires no ordering and therefore immediately runnable.
-        runnable_messages_.push_back(std::move(m));
+        runnable_messages_.push_back(MessageCallback::ReceivedMessage{std::move(m), absl::nullopt});
         continue;
       }
       // The message requires ordering, find out if there is an existing queue
@@ -101,11 +101,11 @@ void SubscriptionMessageQueue::OnRead(
       // the per-ordering-key queue as a marker for any other incoming messages
       // with the same ordering key.
       if (loc.second) {
-        runnable_messages_.push_back(std::move(m));
+        runnable_messages_.push_back(MessageCallback::ReceivedMessage{std::move(m), absl::nullopt});
         continue;
       }
       // Insert the messages into the existing queue.
-      loc.first->second.push_back(std::move(m));
+      loc.first->second.push_back(MessageCallback::ReceivedMessage{std::move(m), absl::nullopt});
     }
     DrainQueue(std::move(lk));
   };
@@ -129,18 +129,18 @@ void SubscriptionMessageQueue::Shutdown(std::unique_lock<std::mutex> lk) {
   available_slots_ = 0;
   QueueByOrderingKey queues;
   queues.swap(queues_);
-  std::deque<google::pubsub::v1::ReceivedMessage> runnable_messages;
+  std::deque<MessageCallback::ReceivedMessage> runnable_messages;
   runnable_messages.swap(runnable_messages_);
   lk.unlock();
 
   std::vector<std::string> ack_ids;
   for (auto& kv : queues) {
     for (auto& m : kv.second) {
-      ack_ids.push_back(std::move(*m.mutable_ack_id()));
+      ack_ids.push_back(std::move(*m.message.mutable_ack_id()));
     }
   }
   for (auto& m : runnable_messages) {
-    ack_ids.push_back(std::move(*m.mutable_ack_id()));
+    ack_ids.push_back(std::move(*m.message.mutable_ack_id()));
   }
 
   if (ack_ids.empty()) return;
@@ -149,7 +149,7 @@ void SubscriptionMessageQueue::Shutdown(std::unique_lock<std::mutex> lk) {
 
 void SubscriptionMessageQueue::DrainQueue(std::unique_lock<std::mutex> lk) {
   while (!runnable_messages_.empty() && available_slots_ > 0 && !shutdown_) {
-    auto m = std::move(runnable_messages_.front());
+    auto m = std::move(runnable_messages_.front()).message;
     runnable_messages_.pop_front();
     --available_slots_;
     // No need to track messages without an ordering key, as there is no action
@@ -160,7 +160,7 @@ void SubscriptionMessageQueue::DrainQueue(std::unique_lock<std::mutex> lk) {
     // Don't hold a lock during the callback, as the callee may call `Read()`
     // or something similar.
     lk.unlock();
-    callback_->operator()(std::move(m));
+    callback_->operator()(MessageCallback::ReceivedMessage{std::move(m),absl::nullopt} );
     lk.lock();
   }
 }

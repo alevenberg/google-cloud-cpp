@@ -48,14 +48,14 @@ class TracingMessageCallback : public MessageCallback {
     child_->operator()(std::move(m), std::move(ack));
   };
 
-  void operator()(google::pubsub::v1::ReceivedMessage m) override {
+  void operator()(ReceivedMessage m) override {
     // auto span = StartSchedulerSpan();
     namespace sc = opentelemetry::trace::SemanticConventions;
     opentelemetry::trace::StartSpanOptions options;
     options.kind = opentelemetry::trace::SpanKind::kClient;
     if (batch_callback_) {
       std::shared_ptr<SubscribeData> data =
-          batch_callback_->GetSubscribeDataFromAckId(m.ack_id());
+          batch_callback_->GetSubscribeDataFromAckId(m.message.ack_id());
       if (data->has_subscribe_span()) {
         std::shared_ptr<TracingSubscribeData> tracing =
             std::dynamic_pointer_cast<TracingSubscribeData>(data);

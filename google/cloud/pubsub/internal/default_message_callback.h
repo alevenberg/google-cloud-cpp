@@ -31,7 +31,7 @@ GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
 class DefaultMessageCallback : public MessageCallback {
  public:
   using MessageCallback =
-      std::function<void(google::pubsub::v1::ReceivedMessage)>;
+      std::function<void(ReceivedMessage)>;
   using Callback = std::function<void(
       pubsub::Message, std::unique_ptr<pubsub::ExactlyOnceAckHandler::Impl>)>;
 
@@ -47,7 +47,7 @@ class DefaultMessageCallback : public MessageCallback {
     callback_(std::move(m), std::move(ack));
   };
 
-  void operator()(google::pubsub::v1::ReceivedMessage m) override {
+  void operator()(ReceivedMessage m) override {
     message_callback_(std::move(m));
   };
   void SaveBatchCallback(std::shared_ptr<BatchCallback>) override{};

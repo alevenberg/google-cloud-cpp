@@ -43,7 +43,7 @@ class BatchCallback {
     // A batch of messages received.
     StatusOr<google::pubsub::v1::StreamingPullResponse> response;
     // A map from message id to the subscribe span for the tracing data.
-    absl::optional<absl::any> tracing_subscribe_data;
+    absl::optional<absl::any> tracing_subscribe_data = absl::nullopt;
   };
 
   virtual void operator()(StreamingPullResponse response) = 0;

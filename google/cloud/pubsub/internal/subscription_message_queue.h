@@ -98,13 +98,13 @@ class SubscriptionMessageQueue
 
   using QueueByOrderingKey =
       std::unordered_map<std::string,
-                         std::deque<google::pubsub::v1::ReceivedMessage>>;
+                         std::deque<MessageCallback::ReceivedMessage>>;
 
   std::mutex mu_;
   std::unique_ptr<MessageCallback> callback_;
   bool shutdown_ = false;
   std::size_t available_slots_ = 0;
-  std::deque<google::pubsub::v1::ReceivedMessage> runnable_messages_;
+  std::deque<MessageCallback::ReceivedMessage> runnable_messages_;
   QueueByOrderingKey queues_;
   std::unordered_map<std::string, std::string> ordering_key_by_ack_id_;
 };

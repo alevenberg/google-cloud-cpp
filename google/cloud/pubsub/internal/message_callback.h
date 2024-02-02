@@ -37,10 +37,17 @@ class MessageCallback {
  public:
   virtual ~MessageCallback() = default;
 
+  struct ReceivedMessage {
+    // A batch of messages received.
+    google::pubsub::v1::ReceivedMessage message;
+    // A single subscribe span, if it exists.
+    absl::optional<absl::any> subscribe_span = absl::nullopt;
+  };
+
   virtual void operator()(
       pubsub::Message,
       std::unique_ptr<pubsub::ExactlyOnceAckHandler::Impl>) = 0;
-  virtual void operator()(google::pubsub::v1::ReceivedMessage) = 0;
+  virtual void operator()(ReceivedMessage message) = 0;
 
   virtual void SaveBatchCallback(std::shared_ptr<BatchCallback> cb) = 0;
 };
