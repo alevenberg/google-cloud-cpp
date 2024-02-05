@@ -55,17 +55,17 @@ class TracingMessageCallback : public MessageCallback {
     opentelemetry::trace::StartSpanOptions options;
     options.kind = opentelemetry::trace::SpanKind::kClient;
     if (m.subscribe_span.has_value()) {
-      try {
-        auto casted_span = absl::any_cast<
-            opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> >(
-            m.subscribe_span.value());
-        if (casted_span != nullptr) {
-          subscribe_span_ = casted_span;
-          options.parent = subscribe_span_->GetContext();
-        }
-      } catch (absl::bad_any_cast const& e) {
-        std::cout << "Bad any cast: " << e.what() << '\n';
-      }
+      // try {
+      //   auto casted_span = absl::any_cast<
+      //       opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> >(
+      //       m.subscribe_span.value());
+      //   if (casted_span != nullptr) {
+      //     subscribe_span_ = casted_span;
+      //     options.parent = subscribe_span_->GetContext();
+      //   }
+      // } catch (absl::bad_any_cast const& e) {
+      //   std::cout << "Bad any cast: " << e.what() << '\n';
+      // }
     }
     auto span = internal::MakeSpan(
         "subscriber flow_control ",
