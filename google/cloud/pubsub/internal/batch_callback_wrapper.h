@@ -72,6 +72,13 @@ class BatchCallbackWrapper : public BatchCallback {
                        std::chrono::seconds extension) override {
     child_->EndExtendLeases(ack_ids, extension);
   };
+  std::shared_ptr<MessageCallback> GetMessageCallback(
+  ) override {
+    return child_->GetMessageCallback();
+  }
+  void operator()(MessageCallback::ReceivedMessage m) override {
+   child_->GetMessageCallback()->operator()(std::move(m));
+  };
 
   std::shared_ptr<BatchCallback> child_;
   Callback wrapper_;

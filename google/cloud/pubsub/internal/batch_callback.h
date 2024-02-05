@@ -16,6 +16,7 @@
 #define GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_BATCH_CALLBACK_H
 
 #include "google/cloud/pubsub/internal/subscribe_data.h"
+#include "google/cloud/pubsub/internal/message_callback.h"
 #include "google/cloud/pubsub/message.h"
 #include "google/cloud/pubsub/version.h"
 #include "google/cloud/completion_queue.h"
@@ -45,9 +46,14 @@ class BatchCallback {
     // A map from message id to the subscribe span for the tracing data.
     absl::optional<absl::any> tracing_subscribe_data = absl::nullopt;
   };
-
+  // struct ReceivedMessage {
+  //   // A batch of messages received.
+  //   google::pubsub::v1::ReceivedMessage message;
+  //   // A single subscribe span, if it exists.
+  //   absl::optional<absl::any> subscribe_span = absl::nullopt;
+  // };
   virtual void operator()(StreamingPullResponse response) = 0;
-
+  virtual void operator()(MessageCallback::ReceivedMessage message) = 0;
   // Add a function to add the ack event
   virtual void AckMessage(std::string const& ack_id) = 0;
   virtual void EndAckMessage(std::string const& ack_id) = 0;
@@ -65,6 +71,7 @@ class BatchCallback {
                             std::chrono::seconds extension) = 0;
   virtual void EndExtendLeases(std::vector<std::string> ack_ids,
                                std::chrono::seconds extension) = 0;
+  virtual std::shared_ptr<MessageCallback> GetMessageCallback() = 0;
 
   virtual std::shared_ptr<SubscribeData> GetSubscribeDataFromAckId(
       std::string ack_id) = 0;

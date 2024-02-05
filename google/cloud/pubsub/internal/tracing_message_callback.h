@@ -38,7 +38,7 @@ GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
  * */
 class TracingMessageCallback : public MessageCallback {
  public:
-  explicit TracingMessageCallback(std::unique_ptr<MessageCallback> child)
+  explicit TracingMessageCallback(std::shared_ptr<MessageCallback> child)
       : child_(std::move(child)) {}
   ~TracingMessageCallback() override = default;
 
@@ -53,16 +53,16 @@ class TracingMessageCallback : public MessageCallback {
     namespace sc = opentelemetry::trace::SemanticConventions;
     opentelemetry::trace::StartSpanOptions options;
     options.kind = opentelemetry::trace::SpanKind::kClient;
-    if (batch_callback_) {
-      std::shared_ptr<SubscribeData> data =
-          batch_callback_->GetSubscribeDataFromAckId(m.message.ack_id());
-      if (data->has_subscribe_span()) {
-        std::shared_ptr<TracingSubscribeData> tracing =
-            std::dynamic_pointer_cast<TracingSubscribeData>(data);
-        subscribe_span_ = tracing->get_subscribe_span();
-        options.parent = subscribe_span_->GetContext();
-      }
-    }
+    // if (batch_callback_) {
+    //   std::shared_ptr<SubscribeData> data =
+    //       batch_callback_->GetSubscribeDataFromAckId(m.message.ack_id());
+    //   if (data->has_subscribe_span()) {
+    //     std::shared_ptr<TracingSubscribeData> tracing =
+    //         std::dynamic_pointer_cast<TracingSubscribeData>(data);
+    //     subscribe_span_ = tracing->get_subscribe_span();
+    //     options.parent = subscribe_span_->GetContext();
+    //   }
+    // }
     auto span = internal::MakeSpan(
         "subscriber flow_control ",
         {{sc::kMessagingSystem, "gcp_pubsub"},
@@ -73,12 +73,7 @@ class TracingMessageCallback : public MessageCallback {
     span->End();
   };
 
-  void SaveBatchCallback(std::shared_ptr<BatchCallback> cb) override {
-    batch_callback_ = cb;
-  };
-
-  std::shared_ptr<BatchCallback> batch_callback_;
-  std::unique_ptr<MessageCallback> child_;
+  std::shared_ptr<MessageCallback> child_;
   opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> subscribe_span_;
 };
 

@@ -192,6 +192,16 @@ class TracingBatchCallback : public BatchCallback {
   void EndBulkNack(std::vector<std::string> ack_ids) override{};
   void EndExtendLeases(std::vector<std::string> ack_ids,
                        std::chrono::seconds extension) override{};
+  std::shared_ptr<MessageCallback> GetMessageCallback(
+  ) override {
+    return child_->GetMessageCallback();
+  }
+
+
+  void operator()(MessageCallback::ReceivedMessage m) override {
+   child_->GetMessageCallback()->operator()(std::move(m));
+  };
+
   std::shared_ptr<BatchCallback> child_;
   std::shared_ptr<opentelemetry::context::propagation::TextMapPropagator>
       propagator_;

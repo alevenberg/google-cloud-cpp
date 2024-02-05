@@ -46,7 +46,7 @@ class SubscriptionConcurrencyControl
                                            std::move(source), max_concurrency));
   }
 
-  void Start(std::unique_ptr<MessageCallback>) override;
+  void Start(std::shared_ptr<MessageCallback>) override;
   void Shutdown() override;
   future<Status> AckMessage(std::string const& ack_id) override;
   future<Status> NackMessage(std::string const& ack_id) override;
@@ -81,7 +81,7 @@ class SubscriptionConcurrencyControl
   std::size_t const max_concurrency_;
 
   std::mutex mu_;
-  std::unique_ptr<MessageCallback> callback_;
+  std::shared_ptr<MessageCallback> callback_;
   std::size_t message_count_ = 0;
   std::size_t messages_requested_ = 0;
 };

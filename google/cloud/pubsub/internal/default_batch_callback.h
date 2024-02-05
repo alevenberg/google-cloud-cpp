@@ -35,11 +35,19 @@ class DefaultBatchCallback : public BatchCallback {
   explicit DefaultBatchCallback(Callback callback)
       : callback_(std::move(callback)) {}
   ~DefaultBatchCallback() override = default;
+  DefaultBatchCallback(Callback callback,
+                       std::shared_ptr<MessageCallback> message_callback)
+      : callback_(std::move(callback)),
+        message_callback_(std::move(message_callback)) {}
+
 
   void operator()(StreamingPullResponse response) override {
     callback_(std::move(response));
   };
 
+  void operator()(MessageCallback::ReceivedMessage m) override {
+    message_callback_->operator()(std::move(m));
+  };
   void AckMessage(std::string const& ack_id) override{};
   void NackMessage(std::string const& ack_id) override{};
   void BulkNack(std::vector<std::string> ack_ids) override{};
@@ -56,9 +64,14 @@ class DefaultBatchCallback : public BatchCallback {
       std::string ack_id) override {
     return std::make_shared<NoopSubscribeData>();
   }
+  std::shared_ptr<MessageCallback> GetMessageCallback(
+  ) override {
+    return message_callback_;
+  }
 
  private:
   Callback callback_;
+  std::shared_ptr<MessageCallback> message_callback_;
 };
 
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_END

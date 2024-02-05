@@ -41,7 +41,7 @@ class TracingSubscriptionMessageQueue : public SubscriptionMessageSource {
       std::shared_ptr<SubscriptionMessageSource> child)
       : child_(std::move(child)) {}
 
-  void Start(std::unique_ptr<MessageCallback> cb) override {
+  void Start(std::shared_ptr<MessageCallback> cb) override {
     // auto s = internal::MakeSpan("TracingSubscriptionMessageQueue::Start");
     // auto scope = internal::OTelScope(s);
     child_->Start(std::move(cb));

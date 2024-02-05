@@ -49,8 +49,6 @@ class DefaultMessageCallback : public MessageCallback {
   void operator()(ReceivedMessage m) override {
     message_callback_(std::move(m));
   };
-  void SaveBatchCallback(std::shared_ptr<BatchCallback>) override{};
-
  private:
   MessageCallback message_callback_;
   Callback callback_;

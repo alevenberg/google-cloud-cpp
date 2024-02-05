@@ -25,7 +25,7 @@ namespace cloud {
 namespace pubsub_internal {
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
 
-void SubscriptionMessageQueue::Start(std::unique_ptr<MessageCallback> cb) {
+void SubscriptionMessageQueue::Start(std::shared_ptr<MessageCallback> cb) {
   std::unique_lock<std::mutex> lk(mu_);
   if (callback_) return;
   callback_ = std::move(cb);
@@ -40,11 +40,10 @@ void SubscriptionMessageQueue::Start(std::unique_ptr<MessageCallback> cb) {
             // if exists set it on the struct here.
             // std::vector<ReceivedMessages>
             if (auto self = weak.lock()) self->OnRead(std::move(r.response));
-          });
+          }, callback_);
   if (otel) {
     callback = std::make_shared<TracingBatchCallback>(std::move(callback));
   }
-  callback_->SaveBatchCallback(callback);
   source_->Start(std::move(callback));
 }
 
