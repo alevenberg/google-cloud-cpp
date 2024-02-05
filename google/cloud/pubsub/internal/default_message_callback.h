@@ -30,8 +30,7 @@ GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
  */
 class DefaultMessageCallback : public MessageCallback {
  public:
-  using MessageCallback =
-      std::function<void(ReceivedMessage)>;
+  using MessageCallback = std::function<void(ReceivedMessage)>;
   using Callback = std::function<void(
       pubsub::Message, std::unique_ptr<pubsub::ExactlyOnceAckHandler::Impl>)>;
 
