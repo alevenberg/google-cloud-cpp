@@ -15,8 +15,8 @@
 #ifndef GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_BATCH_CALLBACK_H
 #define GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_BATCH_CALLBACK_H
 
-#include "google/cloud/pubsub/internal/subscribe_data.h"
 #include "google/cloud/pubsub/internal/message_callback.h"
+#include "google/cloud/pubsub/internal/subscribe_data.h"
 #include "google/cloud/pubsub/message.h"
 #include "google/cloud/pubsub/version.h"
 #include "google/cloud/completion_queue.h"
@@ -33,27 +33,25 @@ namespace pubsub_internal {
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
 
 /**
- * Define the interface to receive message batches from Cloud Pub/Sub.
+ * Define the interface to receive message batches from Cloud Pub/Sub via the
+ * Streaming Pull.
  */
 class BatchCallback {
  public:
   virtual ~BatchCallback() = default;
 
   // Define the struct to store the response from  Cloud Pub/Sub.
+  // The additional tracing_subscribe_data is used for open telemetery tracing. 
   struct StreamingPullResponse {
     // A batch of messages received.
     StatusOr<google::pubsub::v1::StreamingPullResponse> response;
     // A map from message id to the subscribe span for the tracing data.
     absl::optional<absl::any> tracing_subscribe_data = absl::nullopt;
   };
-  // struct ReceivedMessage {
-  //   // A batch of messages received.
-  //   google::pubsub::v1::ReceivedMessage message;
-  //   // A single subscribe span, if it exists.
-  //   absl::optional<absl::any> subscribe_span = absl::nullopt;
-  // };
+
   virtual void operator()(StreamingPullResponse response) = 0;
   virtual void operator()(MessageCallback::ReceivedMessage message) = 0;
+
   // Add a function to add the ack event
   virtual void AckMessage(std::string const& ack_id) = 0;
   virtual void EndAckMessage(std::string const& ack_id) = 0;
