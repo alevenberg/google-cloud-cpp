@@ -374,8 +374,10 @@ void AutoRun(std::vector<std::string> const& argv) {
   auto const subscription_id = RandomSubscriptionId(generator);
   auto const subscription =
       google::cloud::pubsub::Subscription(project_id, subscription_id);
-  auto const bigquery_subscription_id = RandomSubscriptionId(generator);
-  auto const cloud_storage_subscription_id = RandomSubscriptionId(generator);
+  auto const bigquery_subscription_id =
+      "big-query-" + RandomSubscriptionId(generator);
+  auto const cloud_storage_subscription_id =
+      "cloud-storage-" + RandomSubscriptionId(generator);
   auto const dead_letter_topic_id = "dead-letter-" + RandomTopicId(generator);
   auto const dead_letter_topic =
       google::cloud::pubsub::Topic(project_id, dead_letter_topic_id);
@@ -417,6 +419,7 @@ void AutoRun(std::vector<std::string> const& argv) {
   topic_admin_client.CreateTopic(ordering_topic.FullName());
   Cleanup cleanup;
   cleanup.Defer([topic_admin_client, topic, ordering_topic]() mutable {
+    std::cout << "\nStarting cleanup..." << std::endl;
     std::cout << "\nDelete topic (" << topic.topic_id() << ")" << std::endl;
     (void)topic_admin_client.DeleteTopic(topic.FullName());
     std::cout << "\nDelete topic (" << ordering_topic.topic_id() << ")"
@@ -438,6 +441,23 @@ void AutoRun(std::vector<std::string> const& argv) {
   std::cout << "\nRunning CreateSubscription() [2] sample" << std::endl;
   CreateSubscription(subscription_admin_client,
                      {project_id, topic_id, subscription_id});
+
+  // TODO(#13558): create table per project once the Bigquery API exists,
+  if (project_id == "cloud-cpp-testing-resources") {
+    auto const table_id = project_id + ".samples.pubsub-subscription";
+    std::cout << "\nRunning CreateBigQuerySubscription() sample" << std::endl;
+    CreateBigQuerySubscription(
+        subscription_admin_client,
+        {project_id, topic_id, bigquery_subscription_id, table_id});
+    cleanup.Defer([subscription_admin_client, project_id,
+                   bigquery_subscription_id]() mutable {
+      std::cout << "\nDelete subscription (" << bigquery_subscription_id << ")"
+                << std::endl;
+      subscription_admin_client.DeleteSubscription(
+          pubsub::Subscription(project_id, bigquery_subscription_id)
+              .FullName());
+    });
+  }
 
   auto const bucket_id = project_id + "-pubsub-bucket";
   std::cout << "\nRunning CreateCloudStorageSubscription() sample" << std::endl;
