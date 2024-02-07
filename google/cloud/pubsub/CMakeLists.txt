@@ -225,6 +225,7 @@ add_library(
     internal/tracing_batch_callback.h
     internal/tracing_batch_sink.cc
     internal/tracing_batch_sink.h
+    internal/tracing_exactly_once_ack_handler.h
     internal/tracing_helpers.cc
     internal/tracing_helpers.h
     internal/tracing_message_callback.h

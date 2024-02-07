@@ -21,6 +21,7 @@
 #include "google/cloud/pubsub/options.h"
 #include "google/cloud/pubsub/version.h"
 #include "google/cloud/internal/opentelemetry.h"
+#include "google/cloud/pubsub/internal/tracing_exactly_once_ack_handler.h"
 #include "google/cloud/status_or.h"
 #include "opentelemetry/context/propagation/text_map_propagator.h"
 #include "opentelemetry/trace/propagation/http_trace_context.h"
@@ -28,6 +29,7 @@
 #include "opentelemetry/trace/span_startoptions.h"
 #include <google/pubsub/v1/pubsub.pb.h>
 #include <absl/types/bad_any_cast.h>
+#include "google/cloud/opentelemetry_options.h"
 
 namespace google {
 namespace cloud {
@@ -57,7 +59,15 @@ class TracingMessageCallback : public MessageCallback {
                             {sc::kCodeFunction, "pubsub::Concurrency::Read"}},
                            options);
     auto scope = internal::OTelScope(span);
-    child_->operator()(std::move(m), std::move(ack));
+    auto const& current = internal::CurrentOptions();
+    auto otel = current.get<OpenTelemetryTracingOption>();
+    std::unique_ptr<pubsub::ExactlyOnceAckHandler::Impl> ack_handler =
+        std::move(ack);
+    if (otel) {
+      ack_handler = std::make_unique<TracingExactlyOnceAckHandler>(
+          std::move(ack_handler), subscribe_span_);
+    }
+    child_->operator()(std::move(m), std::move(ack_handler));
     span->End();
   };
 
