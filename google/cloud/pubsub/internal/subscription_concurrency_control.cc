@@ -61,9 +61,13 @@ void SubscriptionConcurrencyControl::Start(
     std::shared_ptr<MessageCallback> cb) {
   std::unique_lock<std::mutex> lk(mu_);
   if (callback_) return;
-  callback_ = std::move(cb);
   auto const& current = internal::CurrentOptions();
   auto otel = current.get<OpenTelemetryTracingOption>();
+  if (otel) {
+    callback_ = std::make_shared<TracingMessageCallback>(std::move(cb));
+  } else {
+    callback_ = std::move(cb);
+  }
   std::shared_ptr<MessageCallback> message_callback =
       std::make_shared<DefaultMessageCallback>(
           [w = WeakFromThis()](MessageCallback::ReceivedMessage r) {
@@ -75,7 +79,8 @@ void SubscriptionConcurrencyControl::Start(
   }
   std::shared_ptr<BatchCallback> callback =
       std::make_shared<DefaultBatchCallback>(
-          [](BatchCallback::StreamingPullResponse r) {}, message_callback);
+          [](BatchCallback::StreamingPullResponse r) {},
+          std::move(message_callback));
   if (otel) {
     callback = std::make_shared<TracingBatchCallback>(std::move(callback));
   }

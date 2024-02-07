@@ -31,8 +31,7 @@ void SubscriptionLeaseManagement::Start(std::shared_ptr<BatchCallback> cb) {
       std::move(cb), [weak](BatchCallback::StreamingPullResponse r) {
         if (auto self = weak.lock()) self->OnRead(r.response);
       }));
-  // child_->Start(cb);
-  }
+}
 
 void SubscriptionLeaseManagement::Shutdown() {
   std::unique_lock<std::mutex> lk(mu_);

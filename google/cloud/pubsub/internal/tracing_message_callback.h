@@ -48,8 +48,11 @@ class TracingMessageCallback : public MessageCallback {
       std::unique_ptr<pubsub::ExactlyOnceAckHandler::Impl> ack) override {
     namespace sc = opentelemetry::trace::SemanticConventions;
     opentelemetry::trace::StartSpanOptions options;
+    if (subscribe_span_ != nullptr) {
+      options.parent = subscribe_span_->GetContext();
+    }
     auto span =
-        internal::MakeSpan("callback ",
+        internal::MakeSpan("user callback",
                            {{sc::kMessagingSystem, "gcp_pubsub"},
                             {sc::kCodeFunction, "pubsub::Concurrency::Read"}},
                            options);
