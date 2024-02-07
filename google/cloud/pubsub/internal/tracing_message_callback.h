@@ -59,7 +59,6 @@ class TracingMessageCallback : public MessageCallback {
   };
 
   void operator()(ReceivedMessage m) override {
-    // auto span = StartSchedulerSpan();
     namespace sc = opentelemetry::trace::SemanticConventions;
     opentelemetry::trace::StartSpanOptions options;
     options.kind = opentelemetry::trace::SpanKind::kClient;

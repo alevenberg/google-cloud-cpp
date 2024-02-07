@@ -27,11 +27,12 @@ std::chrono::seconds constexpr SubscriptionLeaseManagement::kAckDeadlineSlack;
 
 void SubscriptionLeaseManagement::Start(std::shared_ptr<BatchCallback> cb) {
   auto weak = std::weak_ptr<SubscriptionLeaseManagement>(shared_from_this());
-  child_->Start(std::make_unique<BatchCallbackWrapper>(
+  child_->Start(std::make_shared<BatchCallbackWrapper>(
       std::move(cb), [weak](BatchCallback::StreamingPullResponse r) {
         if (auto self = weak.lock()) self->OnRead(r.response);
       }));
-}
+  // child_->Start(cb);
+  }
 
 void SubscriptionLeaseManagement::Shutdown() {
   std::unique_lock<std::mutex> lk(mu_);

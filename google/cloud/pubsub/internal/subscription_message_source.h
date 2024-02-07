@@ -48,7 +48,7 @@ class SubscriptionMessageSource {
 
   /// Start the source, set up the callback. Calling multiple times should have
   /// no effect, only the first callback is used.
-  virtual void Start(std::shared_ptr<MessageCallback>) = 0;
+  virtual void Start(std::shared_ptr<BatchCallback>) = 0;
 
   /// Shutdown the source, cancel any outstanding requests and or timers. No
   /// callbacks should be generated after this call.

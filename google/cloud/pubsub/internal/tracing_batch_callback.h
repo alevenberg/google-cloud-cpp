@@ -196,9 +196,12 @@ class TracingBatchCallback : public BatchCallback {
     return child_->GetMessageCallback();
   }
 
+  // Call the MessageCallback.
   void operator()(MessageCallback::ReceivedMessage m) override {
-    m.subscribe_span = ack_id_by_subscribe_span_[m.message.ack_id()];
-    child_->GetMessageCallback()->operator()(std::move(m));
+    if (ack_id_by_subscribe_span_.count(m.message.ack_id())) {
+      m.subscribe_span = ack_id_by_subscribe_span_[m.message.ack_id()];
+    }
+    child_->GetMessageCallback()->operator()(m);
   };
 
   std::shared_ptr<BatchCallback> child_;

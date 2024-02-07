@@ -38,9 +38,10 @@ class BatchCallbackWrapper : public BatchCallback {
   ~BatchCallbackWrapper() override = default;
 
   void operator()(StreamingPullResponse response) override {
+    child_->operator()(response);
     wrapper_(response);
-    child_->operator()(std::move(response));
   };
+
   void AckMessage(std::string const& ack_id) override {
     child_->AckMessage(ack_id);
   }
@@ -72,12 +73,11 @@ class BatchCallbackWrapper : public BatchCallback {
                        std::chrono::seconds extension) override {
     child_->EndExtendLeases(ack_ids, extension);
   };
-  std::shared_ptr<MessageCallback> GetMessageCallback(
-  ) override {
+  std::shared_ptr<MessageCallback> GetMessageCallback() override {
     return child_->GetMessageCallback();
   }
   void operator()(MessageCallback::ReceivedMessage m) override {
-   child_->GetMessageCallback()->operator()(std::move(m));
+    child_->GetMessageCallback()->operator()(std::move(m));
   };
 
   std::shared_ptr<BatchCallback> child_;

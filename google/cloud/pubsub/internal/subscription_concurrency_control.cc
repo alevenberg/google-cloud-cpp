@@ -14,7 +14,9 @@
 
 #include "google/cloud/pubsub/internal/subscription_concurrency_control.h"
 #include "google/cloud/pubsub/exactly_once_ack_handler.h"
+#include "google/cloud/pubsub/internal/default_batch_callback.h"
 #include "google/cloud/pubsub/internal/default_message_callback.h"
+#include "google/cloud/pubsub/internal/tracing_batch_callback.h"
 #include "google/cloud/pubsub/internal/tracing_message_callback.h"
 #include "google/cloud/pubsub/options.h"
 #include "google/cloud/log.h"
@@ -62,13 +64,20 @@ void SubscriptionConcurrencyControl::Start(
   callback_ = std::move(cb);
   auto const& current = internal::CurrentOptions();
   auto otel = current.get<OpenTelemetryTracingOption>();
-  std::shared_ptr<MessageCallback> callback =
+  std::shared_ptr<MessageCallback> message_callback =
       std::make_shared<DefaultMessageCallback>(
           [w = WeakFromThis()](MessageCallback::ReceivedMessage r) {
             if (auto self = w.lock()) self->OnMessage(std::move(r.message));
           });
   if (otel) {
-    callback = std::make_shared<TracingMessageCallback>(std::move(callback));
+    message_callback =
+        std::make_shared<TracingMessageCallback>(std::move(message_callback));
+  }
+  std::shared_ptr<BatchCallback> callback =
+      std::make_shared<DefaultBatchCallback>(
+          [](BatchCallback::StreamingPullResponse r) {}, message_callback);
+  if (otel) {
+    callback = std::make_shared<TracingBatchCallback>(std::move(callback));
   }
   source_->Start(std::move(callback));
   if (total_messages() >= max_concurrency_) return;

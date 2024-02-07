@@ -16,6 +16,7 @@
 #include "google/cloud/pubsub/internal/batch_callback.h"
 #include "google/cloud/pubsub/internal/default_batch_callback.h"
 #include "google/cloud/pubsub/internal/tracing_batch_callback.h"
+#include "google/cloud/pubsub/internal/batch_callback_wrapper.h"
 #include "google/cloud/pubsub/message.h"
 #include "google/cloud/opentelemetry_options.h"
 #include <algorithm>
@@ -25,26 +26,18 @@ namespace cloud {
 namespace pubsub_internal {
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
 
-void SubscriptionMessageQueue::Start(std::shared_ptr<MessageCallback> cb) {
+// Should recieve a batch callback and store that
+void SubscriptionMessageQueue::Start(std::shared_ptr<BatchCallback> cb) {
   std::unique_lock<std::mutex> lk(mu_);
   if (callback_) return;
-  callback_ = std::move(cb);
+  callback_ = cb;
   lk.unlock();
-  auto const& current = internal::CurrentOptions();
-  auto otel = current.get<OpenTelemetryTracingOption>();
+
   auto weak = std::weak_ptr<SubscriptionMessageQueue>(shared_from_this());
-  std::shared_ptr<BatchCallback> callback =
-      std::make_shared<DefaultBatchCallback>(
-          [weak](BatchCallback::StreamingPullResponse r) {
-            // optionally pass in the span map.
-            // if exists set it on the struct here.
-            // std::vector<ReceivedMessages>
-            if (auto self = weak.lock()) self->OnRead(std::move(r.response));
-          }, callback_);
-  if (otel) {
-    callback = std::make_shared<TracingBatchCallback>(std::move(callback));
-  }
-  source_->Start(std::move(callback));
+  source_->Start(std::make_shared<BatchCallbackWrapper>(
+      std::move(cb), [weak](BatchCallback::StreamingPullResponse r) {
+        if (auto self = weak.lock()) self->OnRead(r.response);
+      }));
 }
 
 void SubscriptionMessageQueue::Shutdown() {
