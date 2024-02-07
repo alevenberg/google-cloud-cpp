@@ -39,7 +39,8 @@ class MockExactlyOnceAckHandler : public pubsub::ExactlyOnceAckHandler::Impl {
   MOCK_METHOD(future<Status>, nack, (), (override));
   MOCK_METHOD(std::string, ack_id, ());
   MOCK_METHOD(std::int32_t, delivery_attempt, (), (const, override));
-};
+  MOCK_METHOD(pubsub::Subscription, subscription, (), (const, override));
+  };
 
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_END
 }  // namespace pubsub_mocks

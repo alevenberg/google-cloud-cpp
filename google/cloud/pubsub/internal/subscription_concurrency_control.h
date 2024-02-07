@@ -63,9 +63,9 @@ class SubscriptionConcurrencyControl
         max_concurrency_(max_concurrency) {}
 
   void MessageHandled();
-  void OnMessage(google::pubsub::v1::ReceivedMessage m);
+  void OnMessage(google::pubsub::v1::ReceivedMessage m, pubsub::Subscription subscription);
   void OnMessageAsync(google::pubsub::v1::ReceivedMessage m,
-                      std::weak_ptr<SubscriptionConcurrencyControl> w);
+                      std::weak_ptr<SubscriptionConcurrencyControl> w, pubsub::Subscription subscription);
 
   std::weak_ptr<SubscriptionConcurrencyControl> WeakFromThis() {
     return shared_from_this();

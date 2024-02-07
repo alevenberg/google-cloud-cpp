@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_TRACING_PULL_ACK_HANDLER_H
-#define GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_TRACING_PULL_ACK_HANDLER_H
+#ifndef GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_TRACING_EXACTLY_ONCE_ACK_HANDLER_H
+#define GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_TRACING_EXACTLY_ONCE_ACK_HANDLER_H
 
 #include "google/cloud/pubsub/exactly_once_ack_handler.h"
 #include "google/cloud/pubsub/version.h"
@@ -24,17 +24,15 @@ namespace cloud {
 namespace pubsub_internal {
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
 
-class TracingPullAckHandler : public pubsub::PullAckHandler::Impl {
+class TracingExactlyOnceAckHandler
+    : public pubsub::ExactlyOnceAckHandler::Impl {
  public:
-  explicit TracingPullAckHandler(
-      std::unique_ptr<pubsub::PullAckHandler::Impl> child)
-      : child_(std::move(child)) {
-    consumer_span_context_ =
-        opentelemetry::trace::GetSpan(
-            opentelemetry::context::RuntimeContext::GetCurrent())
-            ->GetContext();
-  }
-  ~TracingPullAckHandler() override = default;
+  explicit TracingExactlyOnceAckHandler(
+      std::unique_ptr<pubsub::ExactlyOnceAckHandler::Impl> child,
+      absl::optional<absl::any> subscribe_span)
+      : child_(std::move(child)), subscribe_span_(subscribe_span) {}
+
+  ~TracingExactlyOnceAckHandler() override = default;
 
   TracingAttributes MakeSharedAttributes(std::string const& ack_id,
                                          std::string const& subscription) {
@@ -49,7 +47,6 @@ class TracingPullAckHandler : public pubsub::PullAckHandler::Impl {
   }
 
   future<Status> ack() override {
-    namespace sc = opentelemetry::trace::SemanticConventions;
     opentelemetry::trace::StartSpanOptions options;
     options.kind = opentelemetry::trace::SpanKind::kClient;
     auto const ack_id = child_->ack_id();
@@ -101,7 +98,7 @@ class TracingPullAckHandler : public pubsub::PullAckHandler::Impl {
   }
 
   std::int32_t delivery_attempt() const override {
-    return child_->delivery_attempt();
+    return child_->delivery_attempt_;
   }
 
   std::string ack_id() const override { return child_->ack_id(); }
@@ -111,15 +108,13 @@ class TracingPullAckHandler : public pubsub::PullAckHandler::Impl {
   }
 
  private:
-  std::unique_ptr<pubsub::PullAckHandler::Impl> child_;
-  opentelemetry::trace::SpanContext consumer_span_context_ =
-      opentelemetry::trace::SpanContext::GetInvalid();
+  std::unique_ptr<pubsub::ExactlyOnceAckHandler::Impl> child_;
+   opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> subscribe_span_;
 };
-
 
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_END
 }  // namespace pubsub_internal
 }  // namespace cloud
 }  // namespace google
 
-#endif  // GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_TRACING_PULL_ACK_HANDLER_H
+#endif  // GOOGLE_CLOUD_CPP_GOOGLE_CLOUD_PUBSUB_INTERNAL_TRACING_EXACTLY_ONCE_ACK_HANDLER_H
