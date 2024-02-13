@@ -81,7 +81,7 @@ class SubscriptionConcurrencyControl
   std::size_t const max_concurrency_;
 
   std::mutex mu_;
-  std::shared_ptr<MessageCallback> callback_;
+  std::shared_ptr<BatchCallback> callback_;
   std::size_t message_count_ = 0;
   std::size_t messages_requested_ = 0;
 };

@@ -17,6 +17,7 @@
 #include "google/cloud/pubsub/exactly_once_ack_handler.h"
 #include "google/cloud/pubsub/internal/ack_handler_wrapper.h"
 #include "google/cloud/pubsub/internal/default_message_callback.h"
+#include "google/cloud/pubsub/internal/tracing_message_callback.h"
 #include "google/cloud/pubsub/internal/streaming_subscription_batch_source.h"
 #include "google/cloud/pubsub/internal/subscription_lease_management.h"
 #include "google/cloud/pubsub/internal/subscription_message_queue.h"
@@ -39,7 +40,7 @@ class SubscriptionSessionImpl
       Options const& opts, CompletionQueue cq,
       std::shared_ptr<SessionShutdownManager> shutdown_manager,
       std::shared_ptr<SubscriptionBatchSource> source,
-      std::unique_ptr<MessageCallback> callback) {
+      std::shared_ptr<MessageCallback> callback) {
     // bool otel_enabled = opts.get<OpenTelemetryTracingOption>();
     std::shared_ptr<SubscriptionMessageSource> queue =
         SubscriptionMessageQueue::Create(shutdown_manager, std::move(source));
@@ -74,8 +75,8 @@ class SubscriptionSessionImpl
       std::shared_ptr<SessionShutdownManager> shutdown_manager,
       std::shared_ptr<SubscriptionBatchSource> source,
       pubsub::ApplicationCallback application_callback) {
-    std::unique_ptr<MessageCallback> callback =
-        std::make_unique<DefaultMessageCallback>(
+    std::shared_ptr<MessageCallback> callback =
+        std::make_shared<DefaultMessageCallback>(
             [cb = std::move(application_callback)](
                 pubsub::Message m,
                 std::unique_ptr<pubsub::ExactlyOnceAckHandler::Impl> h) {
@@ -83,6 +84,12 @@ class SubscriptionSessionImpl
                   std::move(h), m.message_id());
               cb(std::move(m), pubsub::AckHandler(std::move(wrapper)));
             });
+    auto const& current = internal::CurrentOptions();
+      auto otel = current.get<OpenTelemetryTracingOption>();
+    if (otel) {
+      callback =
+          std::make_shared<TracingMessageCallback>(std::move(callback));
+    }
     return Create(opts, std::move(cq), std::move(shutdown_manager),
                   std::move(source), std::move(callback));
   }
@@ -92,14 +99,20 @@ class SubscriptionSessionImpl
       std::shared_ptr<SessionShutdownManager> shutdown_manager,
       std::shared_ptr<SubscriptionBatchSource> source,
       pubsub::ExactlyOnceApplicationCallback application_callback) {
-    std::unique_ptr<MessageCallback> callback =
-        std::make_unique<DefaultMessageCallback>(
+    std::shared_ptr<MessageCallback> callback =
+        std::make_shared<DefaultMessageCallback>(
             [cb = std::move(application_callback)](
                 pubsub::Message m,
                 std::unique_ptr<ExactlyOnceAckHandler::Impl> h) {
               cb(std::move(m), pubsub::ExactlyOnceAckHandler(std::move(h)));
             });
-    return Create(opts, std::move(cq), std::move(shutdown_manager),
+      auto const& current = internal::CurrentOptions();
+      auto otel = current.get<OpenTelemetryTracingOption>(); if (otel) {
+      callback =
+          std::make_shared<TracingMessageCallback>(std::move(callback));
+    }
+      return Create(opts, std::move(cq), std::move(shutdown_manager),
+
                   std::move(source), std::move(callback));
   }
 

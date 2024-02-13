@@ -51,7 +51,10 @@ class BatchCallback {
 
   virtual void operator()(StreamingPullResponse response) = 0;
   virtual void operator()(MessageCallback::ReceivedMessage message) = 0;
-
+  virtual void operator()(
+      pubsub::Message,
+      std::unique_ptr<pubsub::ExactlyOnceAckHandler::Impl>) = 0;
+      
   // Add a function to add the ack event
   virtual void AckMessage(std::string const& ack_id) = 0;
   virtual void EndAckMessage(std::string const& ack_id) = 0;

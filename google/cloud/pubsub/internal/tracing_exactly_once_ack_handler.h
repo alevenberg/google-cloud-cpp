@@ -49,6 +49,7 @@ class TracingExactlyOnceAckHandler
     if (subscribe_span_ != nullptr) {subscribe_span_->AddEvent("gl-cpp.message_ack");}
     namespace sc = opentelemetry::trace::SemanticConventions;
     opentelemetry::trace::StartSpanOptions options = RootStartSpanOptions();
+     if (subscribe_span_ != nullptr) {  options.parent =subscribe_span_->GetContext(); }
     options.kind = opentelemetry::trace::SpanKind::kClient;
     auto const ack_id = child_->ack_id();
     auto const subscription = child_->subscription();

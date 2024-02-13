@@ -44,7 +44,11 @@ class DefaultBatchCallback : public BatchCallback {
   void operator()(StreamingPullResponse response) override {
     callback_(std::move(response));
   };
-
+  void operator()(
+      pubsub::Message m,
+      std::unique_ptr<pubsub::ExactlyOnceAckHandler::Impl> ack) override {
+     message_callback_->operator()(std::move(m), std::move(ack));
+  };
   void operator()(MessageCallback::ReceivedMessage m) override {
     message_callback_->operator()(std::move(m));
   };

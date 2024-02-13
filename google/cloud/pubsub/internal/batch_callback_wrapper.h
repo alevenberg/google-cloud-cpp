@@ -41,7 +41,11 @@ class BatchCallbackWrapper : public BatchCallback {
     child_->operator()(response);
     wrapper_(response);
   };
-
+  void operator()(
+      pubsub::Message m,
+      std::unique_ptr<pubsub::ExactlyOnceAckHandler::Impl> ack) override {
+     child_->operator()(std::move(m), std::move(ack));
+  };
   void AckMessage(std::string const& ack_id) override {
     child_->AckMessage(ack_id);
   }

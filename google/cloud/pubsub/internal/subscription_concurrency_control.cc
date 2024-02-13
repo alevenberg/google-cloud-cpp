@@ -16,6 +16,7 @@
 #include "google/cloud/pubsub/exactly_once_ack_handler.h"
 #include "google/cloud/pubsub/internal/default_batch_callback.h"
 #include "google/cloud/pubsub/internal/default_message_callback.h"
+#include "google/cloud/pubsub/internal/message_callback_wrapper.h"
 #include "google/cloud/pubsub/internal/tracing_batch_callback.h"
 #include "google/cloud/pubsub/internal/tracing_message_callback.h"
 #include "google/cloud/pubsub/options.h"
@@ -35,7 +36,8 @@ class AckHandlerImpl : public pubsub::ExactlyOnceAckHandler::Impl {
                           pubsub::Subscription subscription)
       : source_(std::move(w)),
         ack_id_(std::move(ack_id)),
-        delivery_attempt_(delivery_attempt), subscription_(subscription) {}
+        delivery_attempt_(delivery_attempt),
+        subscription_(subscription) {}
   ~AckHandlerImpl() override = default;
 
   future<Status> ack() override {
@@ -68,33 +70,24 @@ void SubscriptionConcurrencyControl::Start(
   std::unique_lock<std::mutex> lk(mu_);
   if (callback_) return;
   auto const& current = internal::CurrentOptions();
-  auto otel = current.get<OpenTelemetryTracingOption>();
-  if (otel) {
-    callback_ = std::make_shared<TracingMessageCallback>(std::move(cb));
-  } else {
-    callback_ = std::move(cb);
-  }
+
   auto subscription = current.get<pubsub::SubscriptionOption>();
 
-  std::shared_ptr<MessageCallback> message_callback =
-      std::make_shared<DefaultMessageCallback>(
-          [w = WeakFromThis(),
-           subscription](MessageCallback::ReceivedMessage r) {
-            if (auto self = w.lock())
-              self->OnMessage(std::move(r.message), subscription);
-          });
+  auto message_callback = std::make_shared<MessageCallbackWrapper>(
+      std::move(cb),
+      [w = WeakFromThis(), subscription](MessageCallback::ReceivedMessage r) {
+        if (auto self = w.lock())
+          self->OnMessage(std::move(r.message), subscription);
+      });
+
+  callback_ = std::make_shared<DefaultBatchCallback>(
+      [](BatchCallback::StreamingPullResponse r) {},
+      std::move(message_callback));
+  auto otel = current.get<OpenTelemetryTracingOption>();
   if (otel) {
-    message_callback =
-        std::make_shared<TracingMessageCallback>(std::move(message_callback));
+    callback_ = std::make_shared<TracingBatchCallback>(std::move(callback_));
   }
-  std::shared_ptr<BatchCallback> callback =
-      std::make_shared<DefaultBatchCallback>(
-          [](BatchCallback::StreamingPullResponse r) {},
-          std::move(message_callback));
-  if (otel) {
-    callback = std::make_shared<TracingBatchCallback>(std::move(callback));
-  }
-  source_->Start(std::move(callback));
+  source_->Start(callback_);
   if (total_messages() >= max_concurrency_) return;
   auto const read_count = max_concurrency_ - total_messages();
   messages_requested_ = read_count;
@@ -142,8 +135,10 @@ void SubscriptionConcurrencyControl::OnMessage(
 
   std::weak_ptr<SubscriptionConcurrencyControl> w = shared_from_this();
   shutdown_manager_->StartAsyncOperation(
-      __func__, "callback", cq_, [m = std::move(m), w = std::move(w), subscription] {
-        if (auto s = w.lock()) s->OnMessageAsync(std::move(m), std::move(w), subscription);
+      __func__, "callback", cq_,
+      [m = std::move(m), w = std::move(w), subscription] {
+        if (auto s = w.lock())
+          s->OnMessageAsync(std::move(m), std::move(w), subscription);
       });
 }
 
@@ -153,7 +148,8 @@ void SubscriptionConcurrencyControl::OnMessageAsync(
     pubsub::Subscription subscription) {
   shutdown_manager_->StartOperation(__func__, "handler", [&] {
     auto h = std::make_unique<AckHandlerImpl>(
-        std::move(w), std::move(*m.mutable_ack_id()), m.delivery_attempt(), subscription);
+        std::move(w), std::move(*m.mutable_ack_id()), m.delivery_attempt(),
+        subscription);
     callback_->operator()(FromProto(std::move(*m.mutable_message())),
                           std::move(h));
   });
