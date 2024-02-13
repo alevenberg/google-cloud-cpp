@@ -181,7 +181,7 @@ future<Status> StreamingSubscriptionBatchSource::BulkNack(
                  });
   return Reduce(std::move(pending));
 }
-
+// Add tracing around 
 void StreamingSubscriptionBatchSource::ExtendLeases(
     std::vector<std::string> ack_ids, std::chrono::seconds extension) {
   callback_->ExtendLeases(ack_ids, extension);

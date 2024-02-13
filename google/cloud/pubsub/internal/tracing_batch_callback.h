@@ -85,7 +85,7 @@ class TracingBatchCallback : public BatchCallback {
   ~TracingBatchCallback() override = default;
 
   void operator()(StreamingPullResponse response) override {
-      std::vector<opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span>>
+    std::vector<opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span>>
         spans;
     if (response.response) {
       for (auto const& message : response.response->received_messages()) {
@@ -198,18 +198,19 @@ class TracingBatchCallback : public BatchCallback {
 
   // Call the MessageCallback.
   void operator()(MessageCallback::ReceivedMessage m) override {
-    // std::cout << "has_ack_id" << ack_id_by_subscribe_span_.count(m.message.ack_id()) << "\n";
+    // std::cout << "has_ack_id" <<
+    // ack_id_by_subscribe_span_.count(m.message.ack_id()) << "\n";
     if (ack_id_by_subscribe_span_.count(m.message.ack_id())) {
       m.subscribe_span = ack_id_by_subscribe_span_[m.message.ack_id()];
     }
     child_->GetMessageCallback()->operator()(m);
   };
-
+  // only add one ack handler, add extend spans, refactor around that
   // Call the MessageCallback.
   void operator()(
       pubsub::Message m,
-      std::unique_ptr<pubsub::ExactlyOnceAckHandler::Impl> ack)  override {
-       // if (ack_id_by_subscribe_span_.count(m.message.ack_id())) {
+      std::unique_ptr<pubsub::ExactlyOnceAckHandler::Impl> ack) override {
+    // if (ack_id_by_subscribe_span_.count(m.message.ack_id())) {
     //   m.subscribe_span = ack_id_by_subscribe_span_[m.message.ack_id()];
     // }
     child_->GetMessageCallback()->operator()(m, std::move(ack));
