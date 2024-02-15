@@ -22,6 +22,7 @@
 #include "absl/strings/match.h"
 #include <grpcpp/grpcpp.h>
 #ifdef GOOGLE_CLOUD_CPP_HAVE_OPENTELEMETRY
+#include <arpa/inet.h>
 #include <opentelemetry/context/propagation/global_propagator.h>
 #include <opentelemetry/context/propagation/text_map_propagator.h>
 #include <opentelemetry/trace/semantic_conventions.h>
@@ -73,6 +74,27 @@ class GrpcClientCarrier
   grpc::ClientContext& context_;
 };
 
+// Currently we only parse ipv4 or ipv6 addresses.
+std::string ParseServerAddress(std::string grpc_peer) {
+  size_t offset = grpc_peer.find(':');
+  int domain;
+  if (offset == std::string::npos || offset == 0) {
+    auto version = grpc_peer.substring(0, offset);
+    if (version == "ipv4") {
+      domain = AF_INET;
+    } else if (version == "ipv6") {
+      domain = AF_INET6
+    }
+  }
+
+  std::string buffer;
+  s = inet_pton(domain, grpc_peer.substring(offset + 1), buffer);
+  if (s > 0) {
+    return buffer;
+  }
+  return buffer;
+}
+
 // We translate some keys, and modify binary values to be printable.
 std::map<std::string, std::string> MakeAttributes(
     std::pair<std::string, std::string> kv) {
@@ -80,9 +102,9 @@ std::map<std::string, std::string> MakeAttributes(
   if (kv.first == ":grpc-context-peer") {
     // TODO(#10489): extract IP version, IP address, port from peer URI.
     // https://github.com/grpc/grpc/blob/master/src/core/lib/address_utils/parse_address.h
-    // This is a hack-y solution until gRPC provides a way to parse the address:
-    // https://github.com/grpc/grpc/issues/35885
-    // The address should be in the format: host [ ":" port ]
+    // This is a hack-y solution until gRPC provides a way to parse the
+    // address: https://github.com/grpc/grpc/issues/35885 The address should
+    // be in the format: host [ ":" port ]
     size_t offset = kv.second.find(':');
     if (offset == std::string::npos || offset == 0) {
       result.insert({/*sc::kServerAddress=*/"server.address", kv.second});
@@ -103,9 +125,9 @@ std::map<std::string, std::string> MakeAttributes(
     return result;
   }
 
-  // The header is in binary format. OpenTelemetry does not really support byte
-  // arrays in their attributes, so let's transform the value into a string that
-  // can be printed and interpreted.
+  // The header is in binary format. OpenTelemetry does not really support
+  // byte arrays in their attributes, so let's transform the value into a
+  // string that can be printed and interpreted.
   std::string value;
   auto constexpr kDigits = "0123456789ABCDEF";
   for (unsigned char c : kv.second) {
