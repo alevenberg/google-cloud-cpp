@@ -1985,6 +1985,26 @@ void SubscriberRetrySettings(std::vector<std::string> const& argv) {
       std::move(p.second), __func__);
 }
 
+Status CreateSubscription(
+    google::cloud::pubsub_admin::SubscriptionAdminClient client,
+    std::string const& project_id, std::string const& topic_id,
+    std::string const& subscription_id) {
+  google::pubsub::v1::Subscription request;
+  request.set_name(
+      pubsub::Subscription(project_id, subscription_id).FullName());
+  request.set_topic(pubsub::Topic(project_id, topic_id).FullName());
+  auto sub = client.CreateSubscription(request);
+  if (sub.status().code() == google::cloud::StatusCode::kAlreadyExists) {
+    std::cout << "The subscription already exists\n";
+    return;
+  }
+  if (sub) throw std::move(sub).status();
+
+  std::cout << "The subscription was successfully created: "
+            << sub->DebugString() << "\n";
+  // [END pubsub_create_pull_subscription]
+}
+
 void AutoRunAvro(
     std::string const& project_id, std::string const& testdata_directory,
     google::cloud::internal::DefaultPRNG& generator,
@@ -2259,6 +2279,8 @@ void AutoRun(std::vector<std::string> const& argv) {
       google::cloud::pubsub_admin::MakeTopicAdminConnection());
   google::cloud::pubsub::SubscriptionAdminClient subscription_admin_client(
       google::cloud::pubsub::MakeSubscriptionAdminConnection());
+  google::cloud::pubsub_admin::SubscriptionAdminClient subscription_admin(
+      google::cloud::pubsub_admin::MakeSubscriptionAdminConnection());
 
   std::cout << "\nCreate topic (" << topic.topic_id() << ")" << std::endl;
   topic_admin.CreateTopic(topic.FullName());
@@ -2280,6 +2302,12 @@ void AutoRun(std::vector<std::string> const& argv) {
                   << std::endl;
         (void)topic_admin.DeleteTopic(dead_letter_topic.FullName());
       });
+
+  std::cout << "\nRunning ListTopics() sample" << std::endl;
+  ListTopics(topic_admin_client, {project_id});
+
+  std::cout << "\nRunning the StatusOr example" << std::endl;
+  ExampleStatusOr(topic_admin_client, {project_id});
 
   std::cout << "\nRunning CreateSubscription() sample [1]" << std::endl;
   CreateSubscription(subscription_admin_client,
