@@ -207,13 +207,11 @@ class TracingBatchCallback : public BatchCallback {
   };
   // only add one ack handler, add extend spans, refactor around that
   // Call the MessageCallback.
-  void operator()(
-      pubsub::Message m,
-      std::unique_ptr<pubsub::ExactlyOnceAckHandler::Impl> ack) override {
-    // if (ack_id_by_subscribe_span_.count(m.message.ack_id())) {
-    //   m.subscribe_span = ack_id_by_subscribe_span_[m.message.ack_id()];
-    // }
-    child_->GetMessageCallback()->operator()(m, std::move(ack));
+  void operator()(MessageCallback::MessageAndHandler m) override {
+    if (message_id_by_subscribe_span_.count(m.message.message_id())) {
+      m.subscribe_span = message_id_by_subscribe_span_[m.message.message_id()];
+    }
+    child_->GetMessageCallback()->operator()(std::move(m));
   };
 
   std::shared_ptr<BatchCallback> child_;

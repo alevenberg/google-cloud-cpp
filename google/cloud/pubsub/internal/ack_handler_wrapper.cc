@@ -21,8 +21,9 @@ namespace pubsub_internal {
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
 
 void AckHandlerWrapper::ack() {
-  auto f = impl_->ack();
-  if (message_id_.empty()) return;
+  // if (!impl_) {return;}
+ auto f = impl_->ack();
+ if (message_id_.empty()) return;
   f.then([id = std::move(message_id_)](auto f) {
     auto status = f.get();
     if (status.ok()) return;

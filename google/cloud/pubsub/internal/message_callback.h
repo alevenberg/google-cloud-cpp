@@ -22,8 +22,8 @@
 #include "google/cloud/future.h"
 #include "google/cloud/status_or.h"
 #include <google/pubsub/v1/pubsub.pb.h>
-#include <string>
 #include <absl/types/any.h>
+#include <string>
 
 namespace google {
 namespace cloud {
@@ -39,15 +39,20 @@ class MessageCallback {
   virtual ~MessageCallback() = default;
 
   struct ReceivedMessage {
-    // A batch of messages received.
+    // A received message.
     google::pubsub::v1::ReceivedMessage message;
     // A single subscribe span, if it exists.
     absl::optional<absl::any> subscribe_span = absl::nullopt;
   };
+  struct MessageAndHandler {
+    pubsub::Message message;
+    std::unique_ptr<pubsub::ExactlyOnceAckHandler::Impl>
+        ack_handler;
+    // A single subscribe span, if it exists.
+    absl::optional<absl::any> subscribe_span = absl::nullopt;
+  };
 
-  virtual void operator()(
-      pubsub::Message,
-      std::unique_ptr<pubsub::ExactlyOnceAckHandler::Impl>) = 0;
+  virtual void operator()(MessageAndHandler m) = 0;
   virtual void operator()(ReceivedMessage message) = 0;
 };
 

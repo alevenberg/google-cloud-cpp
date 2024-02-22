@@ -83,12 +83,12 @@ int main(int argc, char* argv[]) try {
             << "with attributes: " << m.attributes().size() << "\n";
         std::cout << msg.str();
  sleep(3);
-        for (const auto& item : m.attributes()) {
-          std::stringstream attribute_msg;
-          attribute_msg << "Key: " << item.first << "Value: " << item.second
-                        << "\n";
-          std::cout << attribute_msg.str();
-        }
+        // for (const auto& item : m.attributes()) {
+        //   std::stringstream attribute_msg;
+        //   attribute_msg << "Key: " << item.first << "Value: " << item.second
+        //                 << "\n";
+        //   std::cout << attribute_msg.str();
+        // }
         // std::move(h).nack();
         std::move(h).ack();
       });

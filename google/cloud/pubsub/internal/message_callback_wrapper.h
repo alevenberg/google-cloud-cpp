@@ -40,10 +40,8 @@ class MessageCallbackWrapper : public  MessageCallback {
     child_->operator()(message);
     wrapper_(message);
   }
- void operator()  (
-      pubsub::Message message,
-      std::unique_ptr<pubsub::ExactlyOnceAckHandler::Impl> handler) override{
-           child_->operator()(message,std::move(handler));
+ void operator()  (MessageAndHandler m) override{
+           child_->operator()(std::move(m));
     }
   std::shared_ptr<MessageCallback> child_;
   Callback wrapper_;

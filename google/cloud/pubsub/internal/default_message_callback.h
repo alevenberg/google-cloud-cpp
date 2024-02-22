@@ -40,10 +40,8 @@ class DefaultMessageCallback : public MessageCallback {
       : message_callback_(std::move(message_callback)) {}
   ~DefaultMessageCallback() override = default;
 
-  void operator()(
-      pubsub::Message m,
-      std::unique_ptr<pubsub::ExactlyOnceAckHandler::Impl> ack) override {
-    callback_(std::move(m), std::move(ack));
+  void operator()(MessageAndHandler m) override {
+    callback_(std::move(m.message), std::move(m.ack_handler));
   };
 
   void operator()(ReceivedMessage m) override {
