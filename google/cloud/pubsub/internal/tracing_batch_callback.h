@@ -125,6 +125,7 @@ class TracingBatchCallback : public BatchCallback {
       }
     }
   }
+  // Add an event
   void BulkNack(std::vector<std::string> ack_ids) override {
     for (auto const& ack_id : ack_ids) {
       std::lock_guard<std::mutex> lk(mu_);
