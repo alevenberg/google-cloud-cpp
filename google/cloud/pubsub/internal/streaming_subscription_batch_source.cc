@@ -184,6 +184,7 @@ future<Status> StreamingSubscriptionBatchSource::BulkNack(
 // Add tracing around 
 void StreamingSubscriptionBatchSource::ExtendLeases(
     std::vector<std::string> ack_ids, std::chrono::seconds extension) {
+std::cout << "extend called\n";
   callback_->ExtendLeases(ack_ids, extension);
   google::pubsub::v1::ModifyAckDeadlineRequest request;
   request.set_subscription(subscription_full_name_);

@@ -71,6 +71,24 @@ opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> StartSubscribeSpan(
   }
   return span;
 }
+
+opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> StartLeaseSpan(
+    std::string const& ack_id) {
+  auto const& current = internal::CurrentOptions();
+  auto const& subscription = current.get<pubsub::SubscriptionOption>();
+  namespace sc = opentelemetry::trace::SemanticConventions;
+  opentelemetry::trace::StartSpanOptions options;
+  options.kind = opentelemetry::trace::SpanKind::kConsumer;
+  auto span =
+      internal::MakeSpan(subscription.subscription_id() + " lease",
+                         {
+                             {sc::kMessagingSystem, "gcp_pubsub"},
+                             {"messaging.gcp_pubsub.message.ack_id", ack_id},
+                         },
+                         options);
+
+  return span;
+}
 }  // namespace
 
 /**
@@ -149,7 +167,17 @@ class TracingBatchCallback : public BatchCallback {
           subscribe_span->AddEvent("extend lease");
         }
       }
+
+      auto lease = StartLeaseSpan(ack_id);
+      auto scope = internal::OTelScope(lease);
+      {
+        std::lock_guard<std::mutex> lk(mu_);
+        lease_span_by_ack_id[ack_id] = lease;
+      }
     }
+
+    auto span = internal::MakeSpan("lease");
+    auto scope = internal::OTelScope(span);
   }
 
   std::shared_ptr<SubscribeData> GetSubscribeDataFromAckId(
@@ -220,11 +248,17 @@ class TracingBatchCallback : public BatchCallback {
       propagator_;
   std::mutex mu_;
   std::unordered_map<
-      std::string, opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span>>
+      std::string,
+      opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span>>
       message_id_by_subscribe_span_;  // ABSL_GUARDED_BY(mu_)
   std::unordered_map<
-      std::string, opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span>>
+      std::string,
+      opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span>>
       ack_id_by_subscribe_span_;  // ABSL_GUARDED_BY(mu_)
+  std::unordered_map<
+      std::string,
+      opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span>>
+      lease_span_by_ack_id;  // ABSL_GUARDED_BY(mu_)
 };
 
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_END

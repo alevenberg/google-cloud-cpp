@@ -47,10 +47,14 @@ class TracingExactlyOnceAckHandler
   ~TracingExactlyOnceAckHandler() override = default;
   future<Status> ack() override {
     // std::cout << "tracing ack\n";
-    // if (subscribe_span_ != nullptr) {subscribe_span_->AddEvent("gl-cpp.message_ack");}
+    if (subscribe_span_ != nullptr) {
+      subscribe_span_->AddEvent("gl-cpp.message_ack");
+    }
     namespace sc = opentelemetry::trace::SemanticConventions;
     opentelemetry::trace::StartSpanOptions options = RootStartSpanOptions();
-    //  if (subscribe_span_ != nullptr) {  options.parent =subscribe_span_->GetContext(); }
+    if (subscribe_span_ != nullptr) {
+      options.parent = subscribe_span_->GetContext();
+    }
     options.kind = opentelemetry::trace::SpanKind::kClient;
     auto const ack_id = child_->ack_id();
     auto const subscription = child_->subscription();
@@ -59,9 +63,11 @@ class TracingExactlyOnceAckHandler
                            {{sc::kMessagingSystem, "gcp_pubsub"},
                             {"messaging.gcp_pubsub.message.ack_id", ack_id},
                             {"messaging.gcp_pubsub.subscription.template",
-                             subscription.FullName()}}, options);
+                             subscription.FullName()}},
+                           options);
 
-                    //   subscribe_span_ != nullptr?     CreateLinks(subscribe_span_->GetContext()) : {},
+    //   subscribe_span_ != nullptr? CreateLinks(subscribe_span_->GetContext())
+    //   : {},
     // MaybeAddLinkAttributes(*span, consumer_span_context_, "receive");
     auto scope = internal::OTelScope(span);
 
@@ -75,9 +81,12 @@ class TracingExactlyOnceAckHandler
   }
 
   future<Status> nack() override {
-       subscribe_span_->AddEvent("gl-cpp.message_nack");
- namespace sc = opentelemetry::trace::SemanticConventions;
-    opentelemetry::trace::StartSpanOptions options;
+    subscribe_span_->AddEvent("gl-cpp.message_nack");
+    namespace sc = opentelemetry::trace::SemanticConventions;
+    opentelemetry::trace::StartSpanOptions options = RootStartSpanOptions();
+    if (subscribe_span_ != nullptr) {
+      options.parent = subscribe_span_->GetContext();
+    }
     options.kind = opentelemetry::trace::SpanKind::kClient;
     auto const subscription = child_->subscription();
     auto span =

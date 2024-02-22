@@ -40,14 +40,12 @@ int main(int argc, char* argv[]) try {
       pubsub::Subscription(project_id, subscription_id), options));
 
   auto response = subscriber.Pull();
-  if (!response) throw std::move(response).status();
-  std::cout << "Received message " << response->message << "\n";
-  std::move(response->handler).ack();
-
-  response = subscriber.Pull();
-  if (!response) throw std::move(response).status();
-  std::cout << "Received message " << response->message << "\n";
-  std::move(response->handler).nack();
+  while (response) {
+    std::cout << "acking\n";
+    std::cout << "Received message " << response->message << "\n";
+    std::move(response->handler).ack();
+    response = subscriber.Pull();
+  }
 
   return 0;
 } catch (google::cloud::Status const& status) {
