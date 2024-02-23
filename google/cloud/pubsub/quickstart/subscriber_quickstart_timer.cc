@@ -26,7 +26,7 @@ int main(int argc, char* argv[]) try {
   std::string const project_id = "alevenb-test";
   std::string const subscription_id = "my-sub";
 
-  auto constexpr kWaitTimeout = std::chrono::seconds(8);
+  auto constexpr kWaitTimeout = std::chrono::seconds(60);
 
   // Create a namespace alias to make the code easier to read.
   namespace pubsub = ::google::cloud::pubsub;
@@ -84,7 +84,7 @@ int main(int argc, char* argv[]) try {
         msg << "Received message " << m
             << "with attributes: " << m.attributes().size() << "\n";
         std::cout << msg.str();
-        sleep(3);
+        sleep(10);
         // for (const auto& item : m.attributes()) {
         //   std::stringstream attribute_msg;
         //   attribute_msg << "Key: " << item.first << "Value: " << item.second
