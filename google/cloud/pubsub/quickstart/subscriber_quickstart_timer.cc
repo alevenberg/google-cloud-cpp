@@ -26,7 +26,7 @@ int main(int argc, char* argv[]) try {
   std::string const project_id = "alevenb-test";
   std::string const subscription_id = "my-sub";
 
-  auto constexpr kWaitTimeout = std::chrono::seconds(60);
+  auto constexpr kWaitTimeout = std::chrono::seconds(30);
 
   // Create a namespace alias to make the code easier to read.
   namespace pubsub = ::google::cloud::pubsub;
@@ -80,11 +80,11 @@ int main(int argc, char* argv[]) try {
 
   auto session =
       subscriber.Subscribe([&](pubsub::Message const& m, pubsub::AckHandler h) {
-        std::stringstream msg;
-        msg << "Received message " << m
-            << "with attributes: " << m.attributes().size() << "\n";
-        std::cout << msg.str();
-        sleep(10);
+        // std::stringstream msg;
+        // msg << "Received message " << m
+        //     << "with attributes: " << m.attributes().size() << "\n";
+        // std::cout << msg.str();
+        // sleep(10);
         // for (const auto& item : m.attributes()) {
         //   std::stringstream attribute_msg;
         //   attribute_msg << "Key: " << item.first << "Value: " << item.second
@@ -92,7 +92,7 @@ int main(int argc, char* argv[]) try {
         //   std::cout << attribute_msg.str();
         // }
         // std::move(h).nack();
-        // std::move(h).ack();
+        std::move(h).ack();
       });
 
   std::cout << "Waiting for messages on " + subscription_id + "...\n";

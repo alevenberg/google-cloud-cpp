@@ -70,7 +70,7 @@ class TracingPullAckHandler : public pubsub::PullAckHandler::Impl {
     attributes.emplace_back(
         std::make_pair(sc::kCodeFunction, "pubsub::PullAckHandler::ack"));
     auto span = internal::MakeSpan(
-        subscription.subscription_id() + " settle", attributes,
+        subscription.subscription_id() + " ", attributes,
         CreateLinks(consumer_span_context_), options);
     MaybeAddLinkAttributes(*span, consumer_span_context_, "receive");
     auto scope = internal::OTelScope(span);

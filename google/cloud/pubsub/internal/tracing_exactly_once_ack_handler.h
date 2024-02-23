@@ -46,14 +46,20 @@ class TracingExactlyOnceAckHandler
 
   ~TracingExactlyOnceAckHandler() override = default;
   future<Status> ack() override {
-    // std::cout << "tracing ack\n";
+    using TracingAttributes = std::vector<
+        std::pair<opentelemetry::nostd::string_view,
+                  opentelemetry::common::AttributeValue>>;  // std::cout <<
+                                                            // "tracing ack\n";
     if (subscribe_span_ != nullptr) {
       subscribe_span_->AddEvent("gl-cpp.message_ack");
     }
     namespace sc = opentelemetry::trace::SemanticConventions;
     opentelemetry::trace::StartSpanOptions options = RootStartSpanOptions();
+    std::vector<std::pair<opentelemetry::trace::SpanContext, TracingAttributes>>
+        links;
     if (subscribe_span_ != nullptr) {
-      options.parent = subscribe_span_->GetContext();
+      // Create Link
+      links = {{subscribe_span_->GetContext(), TracingAttributes{}}};
     }
     options.kind = opentelemetry::trace::SpanKind::kClient;
     auto const ack_id = child_->ack_id();
@@ -64,8 +70,10 @@ class TracingExactlyOnceAckHandler
                             {"messaging.gcp_pubsub.message.ack_id", ack_id},
                             {"messaging.gcp_pubsub.subscription.template",
                              subscription.FullName()}},
-                           options);
-
+                           links, options);
+    if (subscribe_span_ != nullptr) {
+      MaybeAddLinkAttributes(*span, subscribe_span_->GetContext(), "subscribe");
+    }
     //   subscribe_span_ != nullptr? CreateLinks(subscribe_span_->GetContext())
     //   : {},
     // MaybeAddLinkAttributes(*span, consumer_span_context_, "receive");
@@ -84,13 +92,16 @@ class TracingExactlyOnceAckHandler
     subscribe_span_->AddEvent("gl-cpp.message_nack");
     namespace sc = opentelemetry::trace::SemanticConventions;
     opentelemetry::trace::StartSpanOptions options = RootStartSpanOptions();
+    std::vector<std::pair<opentelemetry::trace::SpanContext, TracingAttributes>>
+        links;
     if (subscribe_span_ != nullptr) {
-      options.parent = subscribe_span_->GetContext();
+      // Create Link
+      links = CreateLinks(subscribe_span_->GetContext());
     }
     options.kind = opentelemetry::trace::SpanKind::kClient;
     auto const subscription = child_->subscription();
-    auto span =
-        internal::MakeSpan(subscription.subscription_id() + " nack", {{}});
+    auto span = internal::MakeSpan(subscription.subscription_id() + " nack",
+                                   {{}}, links, options);
     // MaybeAddLinkAttributes(*span, consumer_span_context_, "receive");
     auto scope = internal::OTelScope(span);
 
