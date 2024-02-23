@@ -15,9 +15,9 @@
 //! [START pubsub_quickstart_subscriber] [all]
 #include "google/cloud/opentelemetry/configure_basic_tracing.h"
 #include "google/cloud/pubsub/message.h"
+#include "google/cloud/pubsub/options.h"
 #include "google/cloud/pubsub/publisher.h"
 #include "google/cloud/pubsub/subscriber.h"
-#include "google/cloud/pubsub/options.h"
 #include "google/cloud/opentelemetry_options.h"
 #include <iostream>
 
@@ -100,6 +100,21 @@ int main(int argc, char* argv[]) try {
   // session.wait();
   // Blocks until the timeout is reached.
   auto result = session.wait_for(kWaitTimeout);
+  if (result == std::future_status::timeout) {
+    std::cout << "timeout reached, ending session\n";
+    session.cancel();
+  }
+  session.get();
+  session =
+      subscriber.Subscribe([&](pubsub::Message const& m, pubsub::AckHandler h) {
+        std::cout << "Received message " << m << "\n";
+        std::move(h).ack();
+      });
+
+  std::cout << "Waiting for messages on " + subscription_id + "...\n";
+
+  // Blocks until the timeout is reached.
+  result = session.wait_for(kWaitTimeout);
   if (result == std::future_status::timeout) {
     std::cout << "timeout reached, ending session\n";
     session.cancel();
