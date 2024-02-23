@@ -2268,6 +2268,13 @@ void AutoRun(std::vector<std::string> const& argv) {
   std::cout << "\nCreate topic (" << dead_letter_topic.topic_id() << ")"
             << std::endl;
   topic_admin.CreateTopic(dead_letter_topic.FullName());
+  // Topics for schema testing.
+  std::cout << "\nCreate topic (" << dead_letter_topic.topic_id() << ")"
+            << std::endl;
+  topic_admin.CreateTopic(dead_letter_topic.FullName()); 
+    std::cout << "\nCreate topic (" << dead_letter_topic.topic_id() << ")"
+            << std::endl;
+  topic_admin.CreateTopic(dead_letter_topic.FullName());
   Cleanup cleanup;
   cleanup.Defer(
       [topic_admin, topic, ordering_topic, dead_letter_topic]() mutable {
