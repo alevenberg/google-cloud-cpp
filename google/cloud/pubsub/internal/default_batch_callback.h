@@ -53,14 +53,12 @@ class DefaultBatchCallback : public BatchCallback {
   void AckMessage(std::string const& ack_id) override{};
   void NackMessage(std::string const& ack_id) override{};
   void BulkNack(std::vector<std::string> ack_ids) override{};
-  void ExtendLeases(std::vector<std::string> ack_ids,
-                    std::chrono::seconds extension) override {}
+  void ExtendLeases(google::pubsub::v1::ModifyAckDeadlineRequest r) override {}
 
   void EndAckMessage(std::string const& ack_id) override{};
   void EndNackMessage(std::string const& ack_id) override{};
   void EndBulkNack(std::vector<std::string> ack_ids) override{};
-  void EndExtendLeases(std::vector<std::string> ack_ids,
-                       std::chrono::seconds extension) override{};
+  void EndExtendLeases(google::pubsub::v1::ModifyAckDeadlineRequest r) override{};
 
   std::shared_ptr<SubscribeData> GetSubscribeDataFromAckId(
       std::string ack_id) override {

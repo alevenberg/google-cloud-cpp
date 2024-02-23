@@ -66,10 +66,8 @@ class BatchCallback {
   virtual void EndBulkNack(std::vector<std::string> ack_ids) = 0;
 
   // Add a function to add the extend event
-  virtual void ExtendLeases(std::vector<std::string> ack_ids,
-                            std::chrono::seconds extension) = 0;
-  virtual void EndExtendLeases(std::vector<std::string> ack_ids,
-                               std::chrono::seconds extension) = 0;
+  virtual void ExtendLeases(google::pubsub::v1::ModifyAckDeadlineRequest r) = 0;
+  virtual void EndExtendLeases(google::pubsub::v1::ModifyAckDeadlineRequest r) = 0;
   virtual std::shared_ptr<MessageCallback> GetMessageCallback() = 0;
 
   virtual std::shared_ptr<SubscribeData> GetSubscribeDataFromAckId(

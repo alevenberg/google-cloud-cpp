@@ -72,23 +72,36 @@ opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> StartSubscribeSpan(
   return span;
 }
 
-opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> StartLeaseSpan(
-    std::string const& ack_id) {
-  auto const& current = internal::CurrentOptions();
-  auto const& subscription = current.get<pubsub::SubscriptionOption>();
-  namespace sc = opentelemetry::trace::SemanticConventions;
-  opentelemetry::trace::StartSpanOptions options;
-  options.kind = opentelemetry::trace::SpanKind::kConsumer;
-  auto span =
-      internal::MakeSpan(subscription.subscription_id() + " lease",
-                         {
-                             {sc::kMessagingSystem, "gcp_pubsub"},
-                             {"messaging.gcp_pubsub.message.ack_id", ack_id},
-                         },
-                         options);
+// opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> StartLeaseSpan(
+//     std::string const& ack_id) {
+//   auto const& current = internal::CurrentOptions();
+//   auto const& subscription = current.get<pubsub::SubscriptionOption>();
+//   namespace sc = opentelemetry::trace::SemanticConventions;
+//   opentelemetry::trace::StartSpanOptions options;
+//   options.kind = opentelemetry::trace::SpanKind::kConsumer;
+//   auto span =
+//       internal::MakeSpan(subscription.subscription_id() + " lease",
+//                          {
+//                              {sc::kMessagingSystem, "gcp_pubsub"},
+//                              {"messaging.gcp_pubsub.message.ack_id", ack_id},
+//                          },
+//                          options);
 
-  return span;
-}
+//   return span;
+// }
+
+struct pair_hash {
+    template <class T1, class T2>
+    std::size_t operator () (const std::pair<T1,T2> &p) const {
+        auto h1 = std::hash<T1>{}(p.first);
+        auto h2 = std::hash<T2>{}(p.second);
+
+        // Mainly for demonstration purposes, i.e. works but is overly simple
+        // In the real world, use sth. like boost.hash_combine
+        return h1 ^ h2;  
+    }
+};
+
 }  // namespace
 
 /**
@@ -156,28 +169,38 @@ class TracingBatchCallback : public BatchCallback {
       }
     }
   }
-  void ExtendLeases(std::vector<std::string> ack_ids,
-                    std::chrono::seconds extension) override {
-    for (auto const& ack_id : ack_ids) {
+  void ExtendLeases(
+      google::pubsub::v1::ModifyAckDeadlineRequest request) override {
+    if (request.ack_ids().empty()) {
+      return;
+    }
+    auto span = internal::MakeSpan(request.subscription() + "modack");
+    auto scope = internal::OTelScope(span);
+    // use the first id and the ack deadline as the key
+    //  ;
+
+    for (auto const& ack_id : request.ack_ids()) {
       {
         std::lock_guard<std::mutex> lk(mu_);
         if (ack_id_by_subscribe_span_.find(ack_id) !=
             ack_id_by_subscribe_span_.end()) {
           auto subscribe_span = ack_id_by_subscribe_span_[ack_id];
-          subscribe_span->AddEvent("extend lease");
+          subscribe_span->AddEvent("gl-cpp.modack_start");
         }
-      }
-
-      auto lease = StartLeaseSpan(ack_id);
-      auto scope = internal::OTelScope(lease);
-      {
-        std::lock_guard<std::mutex> lk(mu_);
-        lease_span_by_ack_id[ack_id] = lease;
       }
     }
 
-    auto span = internal::MakeSpan("lease");
-    auto scope = internal::OTelScope(span);
+    auto key = std::pair<std::string, uint64_t>(request.ack_ids().at(0),
+                                                request.ack_deadline_seconds());
+    // If it exists, end the span and start a new one?
+    // If there is the rare case of sending multiple requests with the same
+    // lease management value, what hsould happen?
+    if (lease_span_by_ack_id.find(key) != lease_span_by_ack_id.end()) {
+      auto lease_span = lease_span_by_ack_id[key];
+      lease_span->End();
+    }
+    // Start spans
+    lease_span_by_ack_id[key] = span;
   }
 
   std::shared_ptr<SubscribeData> GetSubscribeDataFromAckId(
@@ -219,8 +242,30 @@ class TracingBatchCallback : public BatchCallback {
     }
   };
   void EndBulkNack(std::vector<std::string> ack_ids) override{};
-  void EndExtendLeases(std::vector<std::string> ack_ids,
-                       std::chrono::seconds extension) override{};
+  void EndExtendLeases(
+      google::pubsub::v1::ModifyAckDeadlineRequest request) override {
+       if (request.ack_ids().empty()) {
+      return;
+    }
+     for (auto const& ack_id : request.ack_ids()) {
+      {
+        std::lock_guard<std::mutex> lk(mu_);
+        if (ack_id_by_subscribe_span_.find(ack_id) !=
+            ack_id_by_subscribe_span_.end()) {
+          auto subscribe_span = ack_id_by_subscribe_span_[ack_id];
+          subscribe_span->AddEvent("gl-cpp.modack_end");
+        }
+      }
+    }
+
+    auto key = std::pair<std::string, uint64_t>(request.ack_ids().at(0),
+                                                request.ack_deadline_seconds());
+    // lease management value, what hsould happen?
+    if (lease_span_by_ack_id.find(key) != lease_span_by_ack_id.end()) {
+      auto lease_span = lease_span_by_ack_id[key];
+      lease_span->End();
+    }
+  };
   std::shared_ptr<MessageCallback> GetMessageCallback() override {
     return child_->GetMessageCallback();
   }
@@ -256,8 +301,8 @@ class TracingBatchCallback : public BatchCallback {
       opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span>>
       ack_id_by_subscribe_span_;  // ABSL_GUARDED_BY(mu_)
   std::unordered_map<
-      std::string,
-      opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span>>
+      std::pair<std::string, uint64_t>,
+      opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span>, pair_hash>
       lease_span_by_ack_id;  // ABSL_GUARDED_BY(mu_)
 };
 

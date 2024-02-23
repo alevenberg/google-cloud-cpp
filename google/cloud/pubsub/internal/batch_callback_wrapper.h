@@ -53,9 +53,8 @@ class BatchCallbackWrapper : public BatchCallback {
   void BulkNack(std::vector<std::string> ack_ids) override {
     child_->BulkNack(ack_ids);
   }
-  void ExtendLeases(std::vector<std::string> ack_ids,
-                    std::chrono::seconds extension) override {
-    child_->ExtendLeases(ack_ids, extension);
+  void ExtendLeases(google::pubsub::v1::ModifyAckDeadlineRequest r) override {
+    child_->ExtendLeases(r);
   }
   std::shared_ptr<SubscribeData> GetSubscribeDataFromAckId(
       std::string ack_id) override {
@@ -71,9 +70,8 @@ class BatchCallbackWrapper : public BatchCallback {
   void EndBulkNack(std::vector<std::string> ack_ids) override {
     child_->EndBulkNack(ack_ids);
   };
-  void EndExtendLeases(std::vector<std::string> ack_ids,
-                       std::chrono::seconds extension) override {
-    child_->EndExtendLeases(ack_ids, extension);
+  void EndExtendLeases(google::pubsub::v1::ModifyAckDeadlineRequest r) override {
+    child_->EndExtendLeases(r);
   };
   std::shared_ptr<MessageCallback> GetMessageCallback() override {
     return child_->GetMessageCallback();

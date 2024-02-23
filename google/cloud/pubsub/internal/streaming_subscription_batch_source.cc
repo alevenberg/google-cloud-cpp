@@ -152,7 +152,6 @@ future<Status> StreamingSubscriptionBatchSource::NackMessage(
 
 future<Status> StreamingSubscriptionBatchSource::BulkNack(
     std::vector<std::string> ack_ids) {
-  callback_->BulkNack(ack_ids);
   internal::OptionsSpan span(options_);
 
   google::pubsub::v1::ModifyAckDeadlineRequest request;
@@ -163,13 +162,20 @@ future<Status> StreamingSubscriptionBatchSource::BulkNack(
   auto requests =
       SplitModifyAckDeadline(std::move(request), kMaxAckIdsPerMessage);
   if (requests.size() == 1) {
-    return stub_->AsyncModifyAckDeadline(
-        cq_, std::make_shared<grpc::ClientContext>(), requests.front());
+    callback_->BulkNack(ack_ids);
+    return stub_
+        ->AsyncModifyAckDeadline(cq_, std::make_shared<grpc::ClientContext>(),
+                                 requests.front())
+        .then([callback = callback_, ack_ids](auto f) {
+          callback->EndBulkNack(ack_ids);
+          return f;
+        });
   }
 
   std::vector<future<Status>> pending(requests.size());
   std::transform(requests.begin(), requests.end(), pending.begin(),
                  [this, callback = callback_, ack_ids](auto const& request) {
+                   callback->BulkNack(ack_ids);
                    return stub_
                        ->AsyncModifyAckDeadline(
                            cq_, std::make_shared<grpc::ClientContext>(),
@@ -181,11 +187,10 @@ future<Status> StreamingSubscriptionBatchSource::BulkNack(
                  });
   return Reduce(std::move(pending));
 }
-// Add tracing around 
+// Add tracing around
 void StreamingSubscriptionBatchSource::ExtendLeases(
     std::vector<std::string> ack_ids, std::chrono::seconds extension) {
-std::cout << "extend called\n";
-  callback_->ExtendLeases(ack_ids, extension);
+  std::cout << "extend called\n";
   google::pubsub::v1::ModifyAckDeadlineRequest request;
   request.set_subscription(subscription_full_name_);
   request.set_ack_deadline_seconds(
@@ -197,13 +202,26 @@ std::cout << "extend called\n";
   auto split = SplitModifyAckDeadline(std::move(request), kMaxAckIdsPerMessage);
   if (exactly_once_delivery_enabled_.value_or(false)) {
     lk.unlock();
-    for (auto& r : split) (void)ExtendLeasesWithRetry(stub_, cq_, std::move(r));
+    for (auto& r : split) {
+      callback_->ExtendLeases(r);
+      (void)ExtendLeasesWithRetry(stub_, cq_, r)
+          .then([callback = callback_, r](auto f) {
+            callback->EndExtendLeases(r);
+            return f;
+          });
+    }
     return;
   }
   lk.unlock();
   for (auto& r : split) {
-    (void)stub_->AsyncModifyAckDeadline(
-        cq_, std::make_shared<grpc::ClientContext>(), r);
+    callback_->ExtendLeases(r);
+    (void)stub_
+        ->AsyncModifyAckDeadline(cq_, std::make_shared<grpc::ClientContext>(),
+                                 r)
+        .then([callback = callback_, r](auto f) {
+          callback->EndExtendLeases(r);
+          return f;
+        });
   }
 }
 
