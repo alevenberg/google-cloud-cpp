@@ -150,7 +150,7 @@ void SubscriptionConcurrencyControl::OnMessageAsync(
     auto h = std::make_unique<AckHandlerImpl>(
         std::move(w), std::move(*m.mutable_ack_id()), m.delivery_attempt(),
         subscription);
-       std::cout << "call tracing callback";
+      //  std::cout << "call tracing callback";
  callback_->operator()(MessageCallback::MessageAndHandler{
         FromProto(std::move(*m.mutable_message())), std::move(h),
         absl::nullopt});

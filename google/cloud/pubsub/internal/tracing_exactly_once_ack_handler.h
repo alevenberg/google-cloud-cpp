@@ -43,13 +43,13 @@ class TracingExactlyOnceAckHandler
       opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span>
           subscribe_span)
       : child_(std::move(child)), subscribe_span_(subscribe_span) {}
-
-  ~TracingExactlyOnceAckHandler() override = default;
-  future<Status> ack() override {
     using TracingAttributes = std::vector<
         std::pair<opentelemetry::nostd::string_view,
                   opentelemetry::common::AttributeValue>>;  // std::cout <<
-                                                            // "tracing ack\n";
+                                
+  ~TracingExactlyOnceAckHandler() override = default;
+  future<Status> ack() override {
+                            // "tracing ack\n";
     if (subscribe_span_ != nullptr) {
       subscribe_span_->AddEvent("gl-cpp.message_ack");
     }
@@ -95,8 +95,7 @@ class TracingExactlyOnceAckHandler
     std::vector<std::pair<opentelemetry::trace::SpanContext, TracingAttributes>>
         links;
     if (subscribe_span_ != nullptr) {
-      // Create Link
-      links = CreateLinks(subscribe_span_->GetContext());
+        links = {{subscribe_span_->GetContext(), TracingAttributes{}}};
     }
     options.kind = opentelemetry::trace::SpanKind::kClient;
     auto const subscription = child_->subscription();
