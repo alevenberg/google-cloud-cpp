@@ -41,7 +41,7 @@ class BatchCallback {
   virtual ~BatchCallback() = default;
 
   // Define the struct to store the response from  Cloud Pub/Sub.
-  // The additional tracing_subscribe_data is used for open telemetery tracing. 
+  // The additional tracing_subscribe_data is used for open telemetery tracing.
   struct StreamingPullResponse {
     // A batch of messages received.
     StatusOr<google::pubsub::v1::StreamingPullResponse> response;
@@ -52,7 +52,7 @@ class BatchCallback {
   virtual void operator()(StreamingPullResponse response) = 0;
   virtual void operator()(MessageCallback::ReceivedMessage message) = 0;
   virtual void operator()(MessageCallback::MessageAndHandler m) = 0;
-      
+
   // Add a function to add the ack event
   virtual void AckMessage(std::string const& ack_id) = 0;
   virtual void EndAckMessage(std::string const& ack_id) = 0;
@@ -67,9 +67,12 @@ class BatchCallback {
 
   // Add a function to add the extend event
   virtual void ExtendLeases(google::pubsub::v1::ModifyAckDeadlineRequest r) = 0;
-  virtual void EndExtendLeases(google::pubsub::v1::ModifyAckDeadlineRequest r) = 0;
+  virtual void EndExtendLeases(
+      google::pubsub::v1::ModifyAckDeadlineRequest r) = 0;
   virtual std::shared_ptr<MessageCallback> GetMessageCallback() = 0;
-
+  virtual void StartFlowControl(
+      google::pubsub::v1::ReceivedMessage message) = 0;
+  virtual void EndFlowControl(std::string message_id) = 0;
   virtual std::shared_ptr<SubscribeData> GetSubscribeDataFromAckId(
       std::string ack_id) = 0;
 };

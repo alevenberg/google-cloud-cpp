@@ -147,6 +147,7 @@ void SubscriptionConcurrencyControl::OnMessageAsync(
     std::weak_ptr<SubscriptionConcurrencyControl> w,
     pubsub::Subscription subscription) {
   shutdown_manager_->StartOperation(__func__, "handler", [&] {
+      // callback_->EndFlowControl(m.ack_id());
     auto h = std::make_unique<AckHandlerImpl>(
         std::move(w), std::move(*m.mutable_ack_id()), m.delivery_attempt(),
         subscription);

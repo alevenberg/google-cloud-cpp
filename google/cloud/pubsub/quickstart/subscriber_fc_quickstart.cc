@@ -50,7 +50,7 @@ int main(int argc, char* argv[]) try {
       pubsub::Topic(project_id, topic_id),
       gc::Options{}.set<gc::OpenTelemetryTracingOption>(true)));
 
-  int n = 15;
+  int n = 100;
   std::vector<gc::future<void>> ids;
   for (int i = 0; i < n; i++) {
     auto id = publisher.Publish(pubsub::MessageBuilder().SetData("Hi!").Build())
@@ -70,10 +70,10 @@ int main(int argc, char* argv[]) try {
 
   auto session =
       subscriber.Subscribe([&](pubsub::Message const& m, pubsub::AckHandler h) {
-        std::stringstream msg;
-        msg << "Received message " << m
-            << "with attributes: " << m.attributes().size() << "\n";
-        std::cout << msg.str();
+        // std::stringstream msg;
+        // msg << "Received message " << m
+        //     << "with attributes: " << m.attributes().size() << "\n";
+        // std::cout << msg.str();
         // for (const auto& item : m.attributes()) {
         //   std::stringstream attribute_msg;
         //   attribute_msg << "Key: " << item.first << "Value: " << item.second
@@ -81,27 +81,12 @@ int main(int argc, char* argv[]) try {
         //   std::cout << attribute_msg.str();
         // }
         // std::move(h).nack();
+        std::cout <<"received: \t" << m.message_id() << "\n";
+        sleep(2);
         std::move(h).ack();
       });
 
   std::cout << "Waiting for messages on " + subscription_id + "...\n";
-
-  // session.wait();
-  // // Blocks until the timeout is reached.
-  // auto result = session.wait_for(kWaitTimeout);
-  // if (result == std::future_status::timeout) {
-  //   std::cout << "timeout reached, ending session\n";
-  //   session.cancel();
-  // }
-  // session.get();
-  // session =
-  //     subscriber.Subscribe([&](pubsub::Message const& m, pubsub::AckHandler h) {
-  //       std::cout << "Received message " << m << "\n";
-  //       std::move(h).ack();
-  //     });
-
-  // std::cout << "Waiting for messages on " + subscription_id + "...\n";
-
   // Blocks until the timeout is reached.
   auto result = session.wait_for(kWaitTimeout);
   if (result == std::future_status::timeout) {

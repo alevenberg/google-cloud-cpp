@@ -14,9 +14,9 @@
 
 #include "google/cloud/pubsub/internal/subscription_message_queue.h"
 #include "google/cloud/pubsub/internal/batch_callback.h"
+#include "google/cloud/pubsub/internal/batch_callback_wrapper.h"
 #include "google/cloud/pubsub/internal/default_batch_callback.h"
 #include "google/cloud/pubsub/internal/tracing_batch_callback.h"
-#include "google/cloud/pubsub/internal/batch_callback_wrapper.h"
 #include "google/cloud/pubsub/message.h"
 #include "google/cloud/opentelemetry_options.h"
 #include <algorithm>
@@ -80,6 +80,7 @@ void SubscriptionMessageQueue::OnRead(
   auto handle_response = [&] {
     shutdown_manager_->FinishedOperation("OnRead");
     for (auto& m : *r.mutable_received_messages()) {
+      callback_->StartFlowControl(m);
       auto key = m.message().ordering_key();
       if (key.empty()) {
         // Empty key, requires no ordering and therefore immediately runnable.
@@ -155,6 +156,7 @@ void SubscriptionMessageQueue::DrainQueue(std::unique_lock<std::mutex> lk) {
     }
     // Don't hold a lock during the callback, as the callee may call `Read()`
     // or something similar.
+    callback_->EndFlowControl(m.ack_id());
     lk.unlock();
     callback_->operator()(
         MessageCallback::ReceivedMessage{std::move(m), absl::nullopt});

@@ -79,7 +79,13 @@ class BatchCallbackWrapper : public BatchCallback {
   void operator()(MessageCallback::ReceivedMessage m) override {
     child_->GetMessageCallback()->operator()(std::move(m));
   };
-
+   void StartFlowControl(
+      google::pubsub::v1::ReceivedMessage message)  override{
+        child_->StartFlowControl(message);
+      };
+   void EndFlowControl(std::string message_id) override {
+    child_->EndFlowControl(message_id);
+   };
   std::shared_ptr<BatchCallback> child_;
   Callback wrapper_;
 };

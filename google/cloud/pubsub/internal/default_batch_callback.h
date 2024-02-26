@@ -59,7 +59,10 @@ class DefaultBatchCallback : public BatchCallback {
   void EndNackMessage(std::string const& ack_id) override{};
   void EndBulkNack(std::vector<std::string> ack_ids) override{};
   void EndExtendLeases(google::pubsub::v1::ModifyAckDeadlineRequest r) override{};
-
+   void StartFlowControl(
+      google::pubsub::v1::ReceivedMessage message)  override{};
+   void EndFlowControl(std::string message_id) override {};
+  
   std::shared_ptr<SubscribeData> GetSubscribeDataFromAckId(
       std::string ack_id) override {
     return std::make_shared<NoopSubscribeData>();
