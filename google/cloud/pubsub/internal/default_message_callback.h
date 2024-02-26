@@ -44,8 +44,11 @@ class DefaultMessageCallback : public MessageCallback {
     callback_(std::move(m.message), std::move(m.ack_handler));
   };
 
-  void operator()(ReceivedMessage m) override {
-  };
+  void operator()(ReceivedMessage m) override{};
+
+  void StartFlowControl(ReceivedMessage message) override{};
+  void EndFlowControl() override{};
+
  private:
   MessageCallback message_callback_;
   Callback callback_;

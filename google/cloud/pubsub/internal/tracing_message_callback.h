@@ -55,7 +55,7 @@ class TracingMessageCallback : public MessageCallback {
             opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> >(
             m.subscribe_span.value());
         if (casted_span != nullptr) {
-   options.parent = casted_span->GetContext();
+          options.parent = casted_span->GetContext();
         }
       } catch (absl::bad_any_cast const& e) {
         std::cout << "Bad any cast: " << e.what() << '\n';
@@ -81,6 +81,33 @@ class TracingMessageCallback : public MessageCallback {
   };
 
   void operator()(ReceivedMessage m) override {
+    // namespace sc = opentelemetry::trace::SemanticConventions;
+    // opentelemetry::trace::StartSpanOptions options;
+    // options.kind = opentelemetry::trace::SpanKind::kClient;
+    // if (m.subscribe_span.has_value()) {
+    //   try {
+    //     auto casted_span = absl::any_cast<
+    //         opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> >(
+    //         m.subscribe_span.value());
+    //     if (casted_span != nullptr) {
+    //       subscribe_span_ =casted_span;
+    //       options.parent = subscribe_span_->GetContext();
+    //     }
+    //   } catch (absl::bad_any_cast const& e) {
+    //     std::cout << "Bad any cast: " << e.what() << '\n';
+    //   }
+    // }
+    // auto span = internal::MakeSpan(
+    //     "subscriber flow_control ",
+    //     {{sc::kMessagingSystem, "gcp_pubsub"},
+    //      {sc::kCodeFunction, "pubsub::SubscriptionMessageQueue::Read"}},
+    //     options);
+    // auto scope = internal::OTelScope(span);
+    child_->operator()(std::move(m));
+    // span->End();
+  };
+
+  void StartFlowControl(ReceivedMessage m) override {
     namespace sc = opentelemetry::trace::SemanticConventions;
     opentelemetry::trace::StartSpanOptions options;
     options.kind = opentelemetry::trace::SpanKind::kClient;
@@ -90,25 +117,32 @@ class TracingMessageCallback : public MessageCallback {
             opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> >(
             m.subscribe_span.value());
         if (casted_span != nullptr) {
-          subscribe_span_ =casted_span;
+          subscribe_span_ = casted_span;
           options.parent = subscribe_span_->GetContext();
         }
       } catch (absl::bad_any_cast const& e) {
         std::cout << "Bad any cast: " << e.what() << '\n';
       }
     }
-    auto span = internal::MakeSpan(
+    auto flow_control_span_ = internal::MakeSpan(
         "subscriber flow_control ",
         {{sc::kMessagingSystem, "gcp_pubsub"},
          {sc::kCodeFunction, "pubsub::SubscriptionMessageQueue::Read"}},
         options);
-    auto scope = internal::OTelScope(span);
-    child_->operator()(std::move(m));
-    span->End();
-  };
+    auto scope = internal::OTelScope(flow_control_span_);
+    child_->StartFlowControl(std::move(m));
+  }
 
+  void EndFlowControl() override {
+    if (flow_control_span_ != nullptr) {
+      flow_control_span_->End();
+    }
+  }
   std::shared_ptr<MessageCallback> child_;
   opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> subscribe_span_;
+  opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span>
+      flow_control_span_;
+  opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> scheduler_span_;
 };
 
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_END

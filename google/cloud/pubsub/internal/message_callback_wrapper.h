@@ -28,11 +28,11 @@ GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
 /**
  * Tracing implementation.
  * */
-class MessageCallbackWrapper : public  MessageCallback {
+class MessageCallbackWrapper : public MessageCallback {
  public:
   using Callback = std::function<void(ReceivedMessage)>;
   explicit MessageCallbackWrapper(std::shared_ptr<MessageCallback> child,
-                                Callback wrapper)
+                                  Callback wrapper)
       : child_(std::move(child)), wrapper_(std::move(wrapper)) {}
   ~MessageCallbackWrapper() override = default;
 
@@ -40,9 +40,14 @@ class MessageCallbackWrapper : public  MessageCallback {
     child_->operator()(message);
     wrapper_(message);
   }
- void operator()  (MessageAndHandler m) override{
-           child_->operator()(std::move(m));
-    }
+  void operator()(MessageAndHandler m) override {
+    child_->operator()(std::move(m));
+  }
+
+  void StartFlowControl(ReceivedMessage message) override {
+    child_->StartFlowControl(std::move(message));
+  };
+  void EndFlowControl() override { child_->EndFlowControl(); };
   std::shared_ptr<MessageCallback> child_;
   Callback wrapper_;
 };

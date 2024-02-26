@@ -46,14 +46,15 @@ class MessageCallback {
   };
   struct MessageAndHandler {
     pubsub::Message message;
-    std::unique_ptr<pubsub::ExactlyOnceAckHandler::Impl>
-        ack_handler;
+    std::unique_ptr<pubsub::ExactlyOnceAckHandler::Impl> ack_handler;
     // A single subscribe span, if it exists.
     absl::optional<absl::any> subscribe_span = absl::nullopt;
   };
 
   virtual void operator()(MessageAndHandler m) = 0;
   virtual void operator()(ReceivedMessage message) = 0;
+  virtual void StartFlowControl(ReceivedMessage message) = 0;
+  virtual void EndFlowControl() = 0;
 };
 
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_END
