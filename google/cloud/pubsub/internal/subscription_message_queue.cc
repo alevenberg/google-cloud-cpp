@@ -80,7 +80,6 @@ void SubscriptionMessageQueue::OnRead(
   auto handle_response = [&] {
     shutdown_manager_->FinishedOperation("OnRead");
     for (auto& m : *r.mutable_received_messages()) {
-      callback_->StartFlowControl(m);
       auto key = m.message().ordering_key();
       if (key.empty()) {
         // Empty key, requires no ordering and therefore immediately runnable.
@@ -88,6 +87,7 @@ void SubscriptionMessageQueue::OnRead(
             MessageCallback::ReceivedMessage{std::move(m), absl::nullopt});
         continue;
       }
+      callback_->StartFlowControl(m);
       // The message requires ordering, find out if there is an existing queue
       // for its ordering key, and insert one if necessary.
       auto loc = queues_.insert({key, {}});

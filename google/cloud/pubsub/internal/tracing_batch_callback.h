@@ -294,7 +294,7 @@ class TracingBatchCallback : public BatchCallback {
     opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> subscribe_span;
     auto message_id = message.message().message_id();
     auto ack_id = message.ack_id();
-    std::cout << "start fc\t" << message_id << "\n";
+    // std::cout << "start fc\t" << message_id << "\n";
     if (message_id_by_subscribe_span_.count(message_id)) {
       subscribe_span = message_id_by_subscribe_span_[message_id];
       options.parent = subscribe_span->GetContext();
@@ -310,7 +310,7 @@ class TracingBatchCallback : public BatchCallback {
   };
 
   void EndFlowControl(std::string ack_id) override {
-    std::cout << "end fc\t" << ack_id << "\n";
+    // std::cout << "end fc\t" << ack_id << "\n";
     if (flow_control.count(ack_id)) {
       auto fc = flow_control[ack_id];
       fc->End();
