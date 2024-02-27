@@ -62,7 +62,10 @@ class DefaultBatchCallback : public BatchCallback {
    void StartFlowControl(
       google::pubsub::v1::ReceivedMessage message)  override{};
    void EndFlowControl(std::string message_id) override {};
-  
+    void StartSpan(
+      google::pubsub::v1::ReceivedMessage message)  override{};
+   void EndSpan(std::string message_id) override {};
+   
   std::shared_ptr<SubscribeData> GetSubscribeDataFromAckId(
       std::string ack_id) override {
     return std::make_shared<NoopSubscribeData>();

@@ -73,7 +73,10 @@ class BatchCallback {
   virtual void StartFlowControl(
       google::pubsub::v1::ReceivedMessage message) = 0;
   virtual void EndFlowControl(std::string message_id) = 0;
-  virtual std::shared_ptr<SubscribeData> GetSubscribeDataFromAckId(
+   virtual void StartSpan(
+      google::pubsub::v1::ReceivedMessage message) = 0;
+  virtual void EndSpan(std::string message_id) = 0;
+   virtual std::shared_ptr<SubscribeData> GetSubscribeDataFromAckId(
       std::string ack_id) = 0;
 };
 

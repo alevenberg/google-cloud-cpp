@@ -86,6 +86,14 @@ class BatchCallbackWrapper : public BatchCallback {
    void EndFlowControl(std::string message_id) override {
     child_->EndFlowControl(message_id);
    };
+
+      void StartSpan(
+      google::pubsub::v1::ReceivedMessage message)  override{
+        child_->StartSpan(message);
+      };
+   void EndSpan(std::string message_id) override {
+    child_->EndSpan(message_id);
+   };
   std::shared_ptr<BatchCallback> child_;
   Callback wrapper_;
 };

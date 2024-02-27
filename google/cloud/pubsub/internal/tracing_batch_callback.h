@@ -129,6 +129,7 @@ class TracingBatchCallback : public BatchCallback {
               subscribe_span;
           ack_id_by_subscribe_span_[message.ack_id()] = subscribe_span;
         }
+        StartSpan(message);
       }
     }
 
@@ -298,13 +299,13 @@ class TracingBatchCallback : public BatchCallback {
     if (message_id_by_subscribe_span_.count(message_id)) {
       subscribe_span = message_id_by_subscribe_span_[message_id];
       options.parent = subscribe_span->GetContext();
-      auto flow_control_span_ = internal::MakeSpan(
+      auto flow_control_span = internal::MakeSpan(
           "subscriber scheduler",
           {{sc::kMessagingSystem, "gcp_pubsub"},
            {sc::kCodeFunction, "pubsub::SubscriptionMessageQueue::Read"}},
           options);
-      auto scope = internal::OTelScope(flow_control_span_);
-      flow_control[ack_id] = flow_control_span_;
+      auto scope = internal::OTelScope(flow_control_span);
+      flow_control[ack_id] = flow_control_span;
     }
     child_->StartFlowControl(message);
   };
@@ -316,6 +317,37 @@ class TracingBatchCallback : public BatchCallback {
       fc->End();
     }
     child_->EndFlowControl(ack_id);
+  };
+
+    void StartSpan(google::pubsub::v1::ReceivedMessage message) override {
+    namespace sc = opentelemetry::trace::SemanticConventions;
+    opentelemetry::trace::StartSpanOptions options;
+    options.kind = opentelemetry::trace::SpanKind::kClient;
+    opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> subscribe_span;
+    auto message_id = message.message().message_id();
+    auto ack_id = message.ack_id();
+    // std::cout << "start fc\t" << message_id << "\n";
+    if (message_id_by_subscribe_span_.count(message_id)) {
+      subscribe_span = message_id_by_subscribe_span_[message_id];
+      options.parent = subscribe_span->GetContext();
+      auto flow_control_span = internal::MakeSpan(
+          "subscriber flow control",
+          {{sc::kMessagingSystem, "gcp_pubsub"},
+           {sc::kCodeFunction, "pubsub::SubscriptionMessageQueue::Read"}},
+          options);
+      auto scope = internal::OTelScope(flow_control_span);
+      scheduler[ack_id] = flow_control_span;
+    }
+    // child_->StartSpan(message);
+  };
+
+  void EndSpan(std::string ack_id) override {
+    // std::cout << "end fc\t" << ack_id << "\n";
+    if (scheduler.count(ack_id)) {
+      auto fc = scheduler[ack_id];
+      fc->End();
+    }
+    child_->EndSpan(ack_id);
   };
   std::shared_ptr<BatchCallback> child_;
   std::shared_ptr<opentelemetry::context::propagation::TextMapPropagator>
@@ -337,7 +369,11 @@ class TracingBatchCallback : public BatchCallback {
       std::string,
       opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span>>
       flow_control;  // ABSL_GUARDED_BY(mu_)
-};
+  std::unordered_map<
+      std::string,
+      opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span>>
+      scheduler;  // ABSL_GUARDED_BY(mu_)
+      };
 
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_END
 }  // namespace pubsub_internal

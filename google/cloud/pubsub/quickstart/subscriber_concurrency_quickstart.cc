@@ -21,10 +21,12 @@
 #include "google/cloud/opentelemetry_options.h"
 #include <iostream>
 
-// bazel run //google/cloud/pubsub/quickstart:subscriber_quickstart
+// bazel run //google/cloud/pubsub/quickstart:subsciber_concurrency_quickstart
+// gcloud pubsub topics create cc-topic
+// gcloud pubsub subscriptions create cc-sub --topic=cc-topic
 int main(int argc, char* argv[]) try {
   std::string const project_id = "alevenb-test";
-  std::string const subscription_id = "my-sub";
+  std::string const subscription_id = "cc-sub";
 
   auto constexpr kWaitTimeout = std::chrono::seconds(30);
 
@@ -38,47 +40,32 @@ int main(int argc, char* argv[]) try {
   auto configuration = otel::ConfigureBasicTracing(project);
 
   // Create a client with OpenTelemetry tracing enabled.
-  auto options = gc::Options{}.set<gc::OpenTelemetryTracingOption>(true);
-  options.set<pubsub::MinDeadlineExtensionOption>(std::chrono::seconds(1));
-  options.set<pubsub::MaxDeadlineExtensionOption>(std::chrono::seconds(3));
- // lease management options
-  options.set<pubsub::MaxOutstandingMessagesOption>(2);
-  // options.set<pubsub::MaxOutstandingBytesOption>(8 * kMiB);
-          // Concurrency
-          //  options .set<pubsub::MaxConcurrencyOption>(8);
-          //  options .set<GrpcBackgroundThreadPoolSizeOption>(16);
   auto subscriber = pubsub::Subscriber(pubsub::MakeSubscriberConnection(
-      pubsub::Subscription(project_id, subscription_id), options));
-
-  // auto message = subscriber.Pull()
-  // auto response = subscriber.Pull();
-  // if (!response) throw std::move(response).status();
-  // std::cout << "Received message " << response->message << "\n";
-  // std::move(response->handler).ack();
-
-  std::string const topic_id = "my-topic";
-
-  // Create a client with OpenTelemetry tracing enabled.
-  // .set<pubsub::MaxBatchMessagesOption>(1000)
-  // .set<pubsub::MaxHoldTimeOption>(std::chrono::seconds(1));
-
+      pubsub::Subscription(project_id, subscription_id),
+      gc::Options{}
+          .set<gc::OpenTelemetryTracingOption>(true)
+          .set<pubsub::MaxConcurrencyOption>(2)));
+  std::string const topic_id = "cc-topic";
   auto publisher = pubsub::Publisher(pubsub::MakePublisherConnection(
       pubsub::Topic(project_id, topic_id),
       gc::Options{}.set<gc::OpenTelemetryTracingOption>(true)));
 
-  int n = 10;
+  int n = 6;
   std::vector<gc::future<void>> ids;
   for (int i = 0; i < n; i++) {
-    auto id = publisher.Publish(pubsub::MessageBuilder().SetData("Hi!").Build())
-                  .then([](gc::future<gc::StatusOr<std::string>> f) {
-                    auto status = f.get();
-                    if (!status) {
-                      std::cout << "Error in publish: " << status.status()
-                                << "\n";
-                      return;
-                    }
-                    std::cout << "Sent message with id: (" << *status << ")\n";
-                  });
+    auto id =
+        publisher
+            .Publish(
+                pubsub::MessageBuilder().SetData(std::to_string(i)).Build())
+            .then([index = i](gc::future<gc::StatusOr<std::string>> f) {
+              auto status = f.get();
+              if (!status) {
+                std::cout << "Error in publish: " << status.status() << "\n";
+                return;
+              }
+              std::cout << index << ". ";
+              std::cout << "Sent message with id: (" << *status << ")\n";
+            });
     ids.push_back(std::move(id));
   }
   // Block until they are actually sent.
@@ -86,41 +73,15 @@ int main(int argc, char* argv[]) try {
 
   auto session =
       subscriber.Subscribe([&](pubsub::Message const& m, pubsub::AckHandler h) {
-        // std::stringstream msg;
-        // msg << "Received message " << m
-        //     << "with attributes: " << m.attributes().size() << "\n";
-        // std::cout << msg.str();
-        sleep(4);
-        // for (const auto& item : m.attributes()) {
-        //   std::stringstream attribute_msg;
-        //   attribute_msg << "Key: " << item.first << "Value: " << item.second
-        //                 << "\n";
-        //   std::cout << attribute_msg.str();
-        // }
-        // std::move(h).nack();
-        // std::move(h).ack();
-      });
-
-  std::cout << "Waiting for messages on " + subscription_id + "...\n";
-
-  // session.wait();
-  // Blocks until the timeout is reached.
-  auto result = session.wait_for(kWaitTimeout);
-  if (result == std::future_status::timeout) {
-    std::cout << "timeout reached, ending session\n";
-    session.cancel();
-  }
-  session.get();
-  session =
-      subscriber.Subscribe([&](pubsub::Message const& m, pubsub::AckHandler h) {
-        std::cout << "Received message " << m << "\n";
+        std::cout << m.data() << ". ";
+        std::cout << "Received message with id: (" << m.message_id() << ")\n";
+        sleep(2);
         std::move(h).ack();
       });
 
   std::cout << "Waiting for messages on " + subscription_id + "...\n";
-
   // Blocks until the timeout is reached.
-  result = session.wait_for(kWaitTimeout);
+  auto result = session.wait_for(kWaitTimeout);
   if (result == std::future_status::timeout) {
     std::cout << "timeout reached, ending session\n";
     session.cancel();
