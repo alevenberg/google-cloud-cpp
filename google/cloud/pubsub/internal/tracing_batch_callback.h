@@ -331,7 +331,7 @@ class TracingBatchCallback : public BatchCallback {
       subscribe_span = message_id_by_subscribe_span_[message_id];
       options.parent = subscribe_span->GetContext();
       auto flow_control_span = internal::MakeSpan(
-          "subscriber flow control",
+          "subscriber concurrency control",
           {{sc::kMessagingSystem, "gcp_pubsub"},
            {sc::kCodeFunction, "pubsub::SubscriptionMessageQueue::Read"}},
           options);
