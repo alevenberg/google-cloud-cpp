@@ -87,9 +87,6 @@ void SubscriptionLeaseManagement::OnRead(
   auto const estimated_server_deadline = now + std::chrono::seconds(10);
   auto const handling_deadline = now + max_deadline_time_;
   for (auto const& rm : response->received_messages()) {
-    std::cout << "start lease expires\n";
-
-    callback_->StartModack(rm.ack_id());
     leases_.emplace(rm.ack_id(),
                     LeaseStatus{estimated_server_deadline, handling_deadline});
   }
@@ -123,6 +120,7 @@ void SubscriptionLeaseManagement::RefreshMessageLeases(
     auto const message_extension =
         std::chrono::duration_cast<seconds>(kv.second.handling_deadline - now);
     extension = (std::min)(extension, message_extension);
+    callback_->StartModack(kv.first);
     ack_ids.push_back(kv.first);
   }
   auto const new_deadline = now + extension;
@@ -130,16 +128,17 @@ void SubscriptionLeaseManagement::RefreshMessageLeases(
     StartRefreshTimer(std::move(lk), new_deadline);
     return;
   }
-  for ( auto ack_id : ack_ids) {
-  std::cout << "extend again\n";
-  callback_->StartModack(ack_id);
-  }
+  // for (auto ack_id : ack_ids) {
+  //   std::cout << "extend again\n";
+  //   callback_->StartModack(ack_id);
+  // }
   lk.unlock();
   child_->ExtendLeases(ack_ids, extension);
   lk.lock();
   for (auto const& ack : ack_ids) {
-    auto i = leases_.find(ack);
+        auto i = leases_.find(ack);
     if (i == leases_.end()) continue;
+    callback_->EndModack(i->first);
     i->second.estimated_server_deadline = new_deadline;
   }
   StartRefreshTimer(std::move(lk), new_deadline);

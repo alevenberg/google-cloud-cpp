@@ -21,14 +21,14 @@
 #include "google/cloud/opentelemetry_options.h"
 #include <iostream>
 
-// bazel run //google/cloud/pubsub/quickstart:nack
-// gcloud pubsub topics create expire-topic
-// gcloud pubsub subscriptions create expire-sub --topic=expire-topic
+// bazel run //google/cloud/pubsub/quickstart:alex
+// gcloud pubsub topics create alex-topic
+// gcloud pubsub subscriptions create alex-sub --topic=alex-topic
 int main(int argc, char* argv[]) try {
   std::string const project_id = "alevenb-test";
-  std::string const subscription_id = "expire-sub";
+  std::string const subscription_id = "alex-sub";
 
-  auto constexpr kWaitTimeout = std::chrono::seconds(60);
+  auto constexpr kWaitTimeout = std::chrono::seconds(30);
 
   // Create a namespace alias to make the code easier to read.
   namespace pubsub = ::google::cloud::pubsub;
@@ -43,10 +43,8 @@ int main(int argc, char* argv[]) try {
   auto subscriber = pubsub::Subscriber(pubsub::MakeSubscriberConnection(
       pubsub::Subscription(project_id, subscription_id),
       gc::Options{}
-          .set<gc::OpenTelemetryTracingOption>(true)
-          .set<pubsub::MinDeadlineExtensionOption>(std::chrono::seconds(10))
-          .set<pubsub::MaxDeadlineExtensionOption>(std::chrono::seconds(60))));
-  std::string const topic_id = "expire-topic";
+          .set<gc::OpenTelemetryTracingOption>(true)));
+  std::string const topic_id = "alex-topic";
   auto publisher = pubsub::Publisher(pubsub::MakePublisherConnection(
       pubsub::Topic(project_id, topic_id),
       gc::Options{}.set<gc::OpenTelemetryTracingOption>(true)));
@@ -72,12 +70,17 @@ int main(int argc, char* argv[]) try {
   // Block until they are actually sent.
   for (auto& id : ids) id.get();
 
-  std::unordered_set<std::string> messages;
+  std::unordered_map<std::string, uint32_t> messages;
   auto session =
       subscriber.Subscribe([&](pubsub::Message const& m, pubsub::AckHandler h) {
         std::cout << m.data() << ". ";
         std::cout << "Received message with id: (" << m.message_id() << ")\n";
-        sleep(41);
+        sleep(1);
+        if (messages.count(m.message_id()) == 2) {
+          std::move(h).ack();
+        } else {
+          messages[m.message_id()] += 1;
+        }
       });
 
   std::cout << "Waiting for messages on " + subscription_id + "...\n";
@@ -87,14 +90,6 @@ int main(int argc, char* argv[]) try {
     std::cout << "timeout reached, ending session\n";
     session.cancel();
   }
-   session =
-      subscriber.Subscribe([&](pubsub::Message const& m, pubsub::AckHandler h) {
-        std::cout << "Received message " << m << "\n";
-        std::move(h).ack();
-      });
-
-  // Blocks until the timeout is reached.
-   result = session.wait_for(std::chrono::seconds(10));
 
   return 0;
 } catch (google::cloud::Status const& status) {
