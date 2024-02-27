@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) try {
   std::string const project_id = "alevenb-test";
   std::string const subscription_id = "expire-sub";
 
-  auto constexpr kWaitTimeout = std::chrono::seconds(180);
+  auto constexpr kWaitTimeout = std::chrono::seconds(60);
 
   // Create a namespace alias to make the code easier to read.
   namespace pubsub = ::google::cloud::pubsub;
@@ -77,7 +77,7 @@ int main(int argc, char* argv[]) try {
       subscriber.Subscribe([&](pubsub::Message const& m, pubsub::AckHandler h) {
         std::cout << m.data() << ". ";
         std::cout << "Received message with id: (" << m.message_id() << ")\n";
-        sleep(60);
+        sleep(41);
       });
 
   std::cout << "Waiting for messages on " + subscription_id + "...\n";
@@ -87,10 +87,14 @@ int main(int argc, char* argv[]) try {
     std::cout << "timeout reached, ending session\n";
     session.cancel();
   }
-  // Pull message so it doesn't wait forever
-  auto response = subscriber.Pull();
-  std::cout << "Received message " << response->message << "\n";
-  std::move(response->handler).ack();
+   session =
+      subscriber.Subscribe([&](pubsub::Message const& m, pubsub::AckHandler h) {
+        std::cout << "Received message " << m << "\n";
+        std::move(h).ack();
+      });
+
+  // Blocks until the timeout is reached.
+   result = session.wait_for(std::chrono::seconds(10));
 
   return 0;
 } catch (google::cloud::Status const& status) {

@@ -172,6 +172,7 @@ class TracingBatchCallback : public BatchCallback {
   }
   void ExtendLeases(
       google::pubsub::v1::ModifyAckDeadlineRequest request) override {
+    std::cout << "extend leases\n";
     if (request.ack_ids().empty()) {
       return;
     }
@@ -242,9 +243,32 @@ class TracingBatchCallback : public BatchCallback {
       }
     }
   };
+
+  void StartModack(std::string const& ack_id) override {
+    std::lock_guard<std::mutex> lk(mu_);
+    {
+      if (ack_id_by_subscribe_span_.find(ack_id) !=
+          ack_id_by_subscribe_span_.end()) {
+        auto subscribe_span = ack_id_by_subscribe_span_[ack_id];
+        subscribe_span->AddEvent("gl-cpp.modack_start");
+      }
+    }
+  };
+  void EndModack(std::string const& ack_id) override {
+    std::lock_guard<std::mutex> lk(mu_);
+    {
+      if (ack_id_by_subscribe_span_.find(ack_id) !=
+          ack_id_by_subscribe_span_.end()) {
+        auto subscribe_span = ack_id_by_subscribe_span_[ack_id];
+        subscribe_span->AddEvent("gl-cpp.modack_end");
+      }
+    }
+  };
+
   void EndBulkNack(std::vector<std::string> ack_ids) override{};
   void EndExtendLeases(
       google::pubsub::v1::ModifyAckDeadlineRequest request) override {
+    std::cout << "end extend leases\n";
     if (request.ack_ids().empty()) {
       return;
     }
@@ -319,7 +343,7 @@ class TracingBatchCallback : public BatchCallback {
     child_->EndFlowControl(ack_id);
   };
 
-    void StartSpan(google::pubsub::v1::ReceivedMessage message) override {
+  void StartSpan(google::pubsub::v1::ReceivedMessage message) override {
     namespace sc = opentelemetry::trace::SemanticConventions;
     opentelemetry::trace::StartSpanOptions options;
     options.kind = opentelemetry::trace::SpanKind::kClient;
@@ -373,7 +397,7 @@ class TracingBatchCallback : public BatchCallback {
       std::string,
       opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span>>
       scheduler;  // ABSL_GUARDED_BY(mu_)
-      };
+};
 
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_END
 }  // namespace pubsub_internal

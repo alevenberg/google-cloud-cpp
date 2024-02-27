@@ -78,6 +78,11 @@ class BatchCallback {
   virtual void EndSpan(std::string message_id) = 0;
    virtual std::shared_ptr<SubscribeData> GetSubscribeDataFromAckId(
       std::string ack_id) = 0;
+
+        // Add a function to add the ack event
+  virtual void StartModack(std::string const& ack_id) = 0;
+  virtual void EndModack(std::string const& ack_id) = 0;
+
 };
 
 GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_END

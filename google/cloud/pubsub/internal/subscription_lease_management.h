@@ -101,7 +101,7 @@ class SubscriptionLeaseManagement
     std::chrono::system_clock::time_point handling_deadline;
   };
   std::unordered_map<std::string, LeaseStatus> leases_;
-
+std::shared_ptr<BatchCallback> callback_;
   bool refreshing_leases_ = false;
   future<void> refresh_timer_;
 };

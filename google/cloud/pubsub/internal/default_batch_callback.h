@@ -65,7 +65,9 @@ class DefaultBatchCallback : public BatchCallback {
     void StartSpan(
       google::pubsub::v1::ReceivedMessage message)  override{};
    void EndSpan(std::string message_id) override {};
-   
+           // Add a function to add the ack event
+   void StartModack(std::string const& ack_id)override {};
+   void EndModack(std::string const& ack_id)override {};
   std::shared_ptr<SubscribeData> GetSubscribeDataFromAckId(
       std::string ack_id) override {
     return std::make_shared<NoopSubscribeData>();

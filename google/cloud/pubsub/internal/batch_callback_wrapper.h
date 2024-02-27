@@ -94,6 +94,12 @@ class BatchCallbackWrapper : public BatchCallback {
    void EndSpan(std::string message_id) override {
     child_->EndSpan(message_id);
    };
+      void StartModack(std::string const& ack_id)override {
+          child_->StartModack(ack_id);
+      };
+   void EndModack(std::string const& ack_id)override {
+    child_->EndModack(ack_id);
+   };
   std::shared_ptr<BatchCallback> child_;
   Callback wrapper_;
 };

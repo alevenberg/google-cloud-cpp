@@ -27,6 +27,7 @@ std::chrono::seconds constexpr SubscriptionLeaseManagement::kAckDeadlineSlack;
 
 void SubscriptionLeaseManagement::Start(std::shared_ptr<BatchCallback> cb) {
   auto weak = std::weak_ptr<SubscriptionLeaseManagement>(shared_from_this());
+  callback_ = cb;
   child_->Start(std::make_shared<BatchCallbackWrapper>(
       std::move(cb), [weak](BatchCallback::StreamingPullResponse r) {
         if (auto self = weak.lock()) self->OnRead(r.response);
@@ -86,6 +87,9 @@ void SubscriptionLeaseManagement::OnRead(
   auto const estimated_server_deadline = now + std::chrono::seconds(10);
   auto const handling_deadline = now + max_deadline_time_;
   for (auto const& rm : response->received_messages()) {
+    std::cout << "start lease expires\n";
+
+    callback_->StartModack(rm.ack_id());
     leases_.emplace(rm.ack_id(),
                     LeaseStatus{estimated_server_deadline, handling_deadline});
   }
@@ -111,7 +115,11 @@ void SubscriptionLeaseManagement::RefreshMessageLeases(
     // This message lease cannot be extended any further, and we do not want to
     // send an extension of 0 seconds because that is a nack.
     // This tells us the message's deadline has expired.
-    if (kv.second.handling_deadline < now + seconds(1)) continue;
+    if (kv.second.handling_deadline < now + seconds(1)) {
+      callback_->EndModack(kv.first);
+      std::cout << "lease expires\n";
+      continue;
+    }
     auto const message_extension =
         std::chrono::duration_cast<seconds>(kv.second.handling_deadline - now);
     extension = (std::min)(extension, message_extension);
@@ -121,6 +129,10 @@ void SubscriptionLeaseManagement::RefreshMessageLeases(
   if (ack_ids.empty()) {
     StartRefreshTimer(std::move(lk), new_deadline);
     return;
+  }
+  for ( auto ack_id : ack_ids) {
+  std::cout << "extend again\n";
+  callback_->StartModack(ack_id);
   }
   lk.unlock();
   child_->ExtendLeases(ack_ids, extension);

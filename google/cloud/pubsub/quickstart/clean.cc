@@ -19,7 +19,7 @@
 
 int main(int argc, char* argv[]) try {
   std::string const project_id = "alevenb-test";
-  std::string const subscription_id = "my-sub";
+  std::string const subscription_id = "expire-sub";
 
   auto constexpr kWaitTimeout = std::chrono::seconds(10);
 
