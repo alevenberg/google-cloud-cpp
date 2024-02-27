@@ -22,11 +22,11 @@
 #include <iostream>
 
 // bazel run //google/cloud/pubsub/quickstart:nack
-// gcloud pubsub topics create expire-topic
-// gcloud pubsub subscriptions create expire-sub --topic=expire-topic
+// gcloud pubsub topics create nothing-topic
+// gcloud pubsub subscriptions create nothing-sub --topic=nothing-topic
 int main(int argc, char* argv[]) try {
   std::string const project_id = "alevenb-test";
-  std::string const subscription_id = "expire-sub";
+  std::string const subscription_id = "nothing-sub";
 
   auto constexpr kWaitTimeout = std::chrono::seconds(180);
 
@@ -44,12 +44,12 @@ int main(int argc, char* argv[]) try {
       pubsub::Subscription(project_id, subscription_id),
       gc::Options{}
           .set<gc::OpenTelemetryTracingOption>(true)));
-  std::string const topic_id = "expire-topic";
+  std::string const topic_id = "nothing-topic";
   auto publisher = pubsub::Publisher(pubsub::MakePublisherConnection(
       pubsub::Topic(project_id, topic_id),
       gc::Options{}.set<gc::OpenTelemetryTracingOption>(true)));
 
-  int n = 1;
+  int n = 10;
   std::vector<gc::future<void>> ids;
   for (int i = 0; i < n; i++) {
     auto id =
