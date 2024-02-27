@@ -26,7 +26,7 @@
 // gcloud pubsub subscriptions create ack-sub --topic=ack
 int main(int argc, char* argv[]) try {
   std::string const project_id = "alevenb-test";
-  std::string const subscription_id = "ack-sub";
+  std::string const subscription_id = "ack-sub1";
 
   auto constexpr kWaitTimeout = std::chrono::seconds(30);
 
@@ -43,7 +43,7 @@ int main(int argc, char* argv[]) try {
   auto options = gc::Options{}.set<gc::OpenTelemetryTracingOption>(true);
   auto subscriber = pubsub::Subscriber(pubsub::MakeSubscriberConnection(
       pubsub::Subscription(project_id, subscription_id), options));
-  std::string const topic_id = "ack";
+  std::string const topic_id = "ack-topic";
   auto publisher = pubsub::Publisher(pubsub::MakePublisherConnection(
       pubsub::Topic(project_id, topic_id),
       gc::Options{}
