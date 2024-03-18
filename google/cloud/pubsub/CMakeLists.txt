@@ -218,6 +218,7 @@ add_library(
     internal/subscription_message_source.h
     internal/subscription_session.cc
     internal/subscription_session.h
+    internal/tracing_batch_callback.h
     internal/tracing_batch_sink.cc
     internal/tracing_batch_sink.h
     internal/tracing_helpers.cc

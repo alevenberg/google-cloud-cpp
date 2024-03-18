@@ -55,6 +55,14 @@ void SubscriptionConcurrencyControl::Start(Callback cb) {
   std::unique_lock<std::mutex> lk(mu_);
   if (callback_) return;
   callback_ = std::move(cb);
+    callback_ = std::make_shared<DefaultBatchCallback>(
+      [](BatchCallback::StreamingPullResponse r) {},
+      std::move(message_callback));
+  auto otel = current.get<OpenTelemetryTracingOption>();
+  if (otel) {
+    callback_ = std::make_shared<TracingBatchCallback>(std::move(callback_));
+  }
+  
   source_->Start([w = WeakFromThis()](google::pubsub::v1::ReceivedMessage r) {
     if (auto self = w.lock()) self->OnMessage(std::move(r));
   });
