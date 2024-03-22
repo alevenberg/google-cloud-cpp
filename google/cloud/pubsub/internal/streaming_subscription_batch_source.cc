@@ -106,14 +106,15 @@ future<Status> StreamingSubscriptionBatchSource::AckMessage(
         cq_,
         [stub = stub_](auto& cq, auto context, auto options,
                        auto const& request) {
+      callback_->EndMessage(ack_id, "gl-cpp.ack_end") } ;
           return stub->AsyncAcknowledge(cq, std::move(context),
                                         std::move(options), request);
-        },
+  },
         options_, std::move(request), __func__);
-  }
-  lk.unlock();
-  return stub_->AsyncAcknowledge(cq_, std::make_shared<grpc::ClientContext>(),
-                                 options_, request);
+}
+lk.unlock();
+return stub_->AsyncAcknowledge(cq_, std::make_shared<grpc::ClientContext>(),
+                               options_, request);
 }
 
 future<Status> StreamingSubscriptionBatchSource::NackMessage(
@@ -132,14 +133,15 @@ future<Status> StreamingSubscriptionBatchSource::NackMessage(
         cq_,
         [stub = stub_](auto& cq, auto context, auto options,
                        auto const& request) {
+      callback_->EndMessage(ack_id, "gl-cpp.nack_end") } ;
           return stub->AsyncModifyAckDeadline(cq, std::move(context),
                                               std::move(options), request);
-        },
+  },
         options_, std::move(request), __func__);
-  }
-  lk.unlock();
-  return stub_->AsyncModifyAckDeadline(
-      cq_, std::make_shared<grpc::ClientContext>(), options_, request);
+}
+lk.unlock();
+return stub_->AsyncModifyAckDeadline(
+    cq_, std::make_shared<grpc::ClientContext>(), options_, request);
 }
 
 future<Status> StreamingSubscriptionBatchSource::BulkNack(
