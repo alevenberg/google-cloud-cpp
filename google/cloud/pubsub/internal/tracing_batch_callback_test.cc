@@ -38,6 +38,8 @@ GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
 
 using ::google::cloud::testing_util::EventNamed;
 using ::google::cloud::testing_util::InstallSpanCatcher;
+using ::google::cloud::testing_util::OTelAttribute;
+using ::google::cloud::testing_util::SpanHasAttributes;
 using ::google::cloud::testing_util::SpanHasEvents;
 using ::google::cloud::testing_util::SpanHasInstrumentationScope;
 using ::google::cloud::testing_util::SpanKindIsConsumer;
@@ -140,6 +142,57 @@ TEST(TracingBatchCallback, StartAndEndMultipleMessage) {
       spans, Contains(AllOf(SpanHasInstrumentationScope(), SpanKindIsConsumer(),
                             SpanNamed("test-sub subscribe"),
                             SpanHasEvents(EventNamed("test-event-2")))));
+}
+
+TEST(TracingBatchSink, SubscribeSpanHasAttributes) {
+  namespace sc = ::opentelemetry::trace::SemanticConventions;
+  auto span_catcher = InstallSpanCatcher();
+  auto mock = std::make_shared<pubsub_testing::MockBatchCallback>();
+  EXPECT_CALL(*mock, callback).Times(1);
+  auto batch_callback = MakeTestBatchCallback(std::move(mock));
+
+  batch_callback->callback(MakeResponse(1));
+  batch_callback->EndMessage("ack-id-0", "test-event");
+
+  auto spans = span_catcher->GetSpans();
+  EXPECT_THAT(
+      spans, Contains(AllOf(SpanNamed("test-subscription subscribe"),
+                                   SpanHasAttributes(
+              OTelAttribute<std::string>(sc::kMessagingSystem, "gcp_pubsub"),
+             OTelAttribute<std::string>(sc::kMessagingOperation,"subscribe")))));
+             // OTelAttribute<std::string>(sc::kMessagingDestinationName,
+               //                          "test-subscription")))));
+              // OTelAttribute<std::string>("gcp.project_id", "test-project"),
+              // OTelAttribute<std::string>(
+              //     "messaging.gcp_pubsub.message.ordering_key",
+              //     "ordering-key-0"),
+              // OTelAttribute<int>("gl-cpp.status_code", kErrorCode),
+              // OTelAttribute<std::int64_t>(/*sc::kMessagingMessageEnvelopeSize=*/
+              //                             "messaging.message.envelope.size",
+              //                             45)
+  // EXPECT_THAT(
+  //     spans,
+  //     Contains(AllOf(SpanNamed("test-subscription subscribe"),
+  //                    SpanHasAttributes(OTelAttribute<std::string>(
+  //                        "gcp.project_id",
+  //                        TestSubscription().project_id())))));
+  // EXPECT_THAT(spans,
+  //             Contains(AllOf(SpanNamed("test-subscription subscribe"),
+  //                            SpanHasAttributes(OTelAttribute<std::string>(
+  //                                sc::kMessagingDestinationName,
+  //                                TestTopic().subscription_id())))));
+  // EXPECT_THAT(
+  //     spans, Contains(AllOf(SpanHasInstrumentationScope(),
+  //     SpanKindIsConsumer(),
+  //                           SpanNamed("test-sub subscribe"),
+  //                           SpanHasAttributes(OTelAttribute<std::string>(
+  //                               sc::kMessagingMessageId, "123")))));
+  // EXPECT_THAT(
+  //     spans, Contains(AllOf(SpanHasInstrumentationScope(),
+  //     SpanKindIsConsumer(),
+  //                           SpanNamed("test-sub subscribe"),
+  //                           SpanHasAttributes(OTelAttribute<std::string>(
+  //                               sc::kMessagingMessageId, "123")))));
 }
 
 }  // namespace
