@@ -464,6 +464,20 @@ service {
   retryable_status_codes: ["kUnavailable"]
 }
 
+# Bigquery v2 REST 
+discovery_products {
+  discovery_document_url: "file:///workspace/generator/discovery/bigquery_public_google_rest_v2.json"
+
+ rest_services {
+    service_proto_path: "google/cloud/bigquery/jobs/v2/jobs.proto"
+    product_path: "google/cloud/bigquery/jobs/v2"
+    initial_copyright_year: "2024"
+    retryable_status_codes: ["kUnavailable"]
+    generate_rest_transport: true
+    generate_grpc_transport: false
+  }
+}
+
 # Bigtable
 service {
   service_proto_path: "google/bigtable/v2/bigtable.proto"
