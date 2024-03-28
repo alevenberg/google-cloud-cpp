@@ -58,13 +58,13 @@ opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> StartSubscribeSpan(
       options);
       //     {"gcp.project_id", subscription.project_id()},
       //     {sc::kMessagingDestinationName, subscription.subscription_id()},
-      //     {sc::kMessagingMessageId, m.message_id()},
-      //     {/*sc::kMessagingMessageEnvelopeSize=*/"messaging.message.envelope."
-      //                                            "size",
-      //      static_cast<std::int64_t>(MessageSize(m))},
-      //     {"messaging.gcp_pubsub.subscription.exactly_once_delivery",
-      //      subscription.enable_exactly_once()},
-      //     {"messaging.gcp_pubsub.message.ack_id", message.ack_id()},
+          {sc::kMessagingMessageId, m.message_id()},
+          {/*sc::kMessagingMessageEnvelopeSize=*/"messaging.message.envelope."
+                                                 "size",
+           static_cast<std::int64_t>(MessageSize(m))},
+          {"messaging.gcp_pubsub.subscription.exactly_once_delivery",
+           subscription.enable_exactly_once()},
+          {"messaging.gcp_pubsub.message.ack_id", message.ack_id()},
       // },
         // if (!message.message().ordering_key().empty()) {
   //   span->SetAttribute("messaging.gcp_pubsub.message.ordering_key",
