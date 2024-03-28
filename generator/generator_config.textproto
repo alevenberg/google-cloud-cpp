@@ -443,76 +443,10 @@ service {
 # Bigquery v2 REST 
 discovery_products {
   discovery_document_url: "file:///workspace/generator/discovery/bigquery_public_google_rest_v2.json"
-  proto_file_overrides: [
-    {schema_name: "TableCell", proto_override_file_path: "google/cloud/bigquery/v2/table_cell.proto"}
-  ]
-
- rest_services {
-    service_proto_path: "google/cloud/bigquery/datasets/v2/datasets.proto"
-    product_path: "google/cloud/bigquery/datasets/v2"
-    initial_copyright_year: "2024"
-    retryable_status_codes: ["kUnavailable"]
-    generate_rest_transport: true
-    generate_grpc_transport: false
-  }
 
  rest_services {
     service_proto_path: "google/cloud/bigquery/jobs/v2/jobs.proto"
     product_path: "google/cloud/bigquery/jobs/v2"
-    initial_copyright_year: "2024"
-    retryable_status_codes: ["kUnavailable"]
-    generate_rest_transport: true
-    generate_grpc_transport: false
-  }
-
- rest_services {
-    service_proto_path: "google/cloud/bigquery/models/v2/models.proto"
-    product_path: "google/cloud/bigquery/models/v2"
-    initial_copyright_year: "2024"
-    retryable_status_codes: ["kUnavailable"]
-    generate_rest_transport: true
-    generate_grpc_transport: false
-  }
-
- rest_services {
-    service_proto_path: "google/cloud/bigquery/projects/v2/projects.proto"
-    product_path: "google/cloud/bigquery/projects/v2"
-    initial_copyright_year: "2024"
-    retryable_status_codes: ["kUnavailable"]
-    generate_rest_transport: true
-    generate_grpc_transport: false
-  }
-
- rest_services {
-    service_proto_path: "google/cloud/bigquery/routines/v2/routines.proto"
-    product_path: "google/cloud/bigquery/routines/v2"
-    initial_copyright_year: "2024"
-    retryable_status_codes: ["kUnavailable"]
-    generate_rest_transport: true
-    generate_grpc_transport: false
-  }
-
- rest_services {
-    service_proto_path: "google/cloud/bigquery/row_access_policies/v2/row_access_policies.proto"
-    product_path: "google/cloud/bigquery/row_access_policies/v2"
-    initial_copyright_year: "2024"
-    retryable_status_codes: ["kUnavailable"]
-    generate_rest_transport: true
-    generate_grpc_transport: false
-  }
-
- rest_services {
-    service_proto_path: "google/cloud/bigquery/tabledata/v2/tabledata.proto"
-    product_path: "google/cloud/bigquery/tabledata/v2"
-    initial_copyright_year: "2024"
-    retryable_status_codes: ["kUnavailable"]
-    generate_rest_transport: true
-    generate_grpc_transport: false
-  }
-
- rest_services {
-    service_proto_path: "google/cloud/bigquery/tables/v2/tables.proto"
-    product_path: "google/cloud/bigquery/tables/v2"
     initial_copyright_year: "2024"
     retryable_status_codes: ["kUnavailable"]
     generate_rest_transport: true
