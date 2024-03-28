@@ -83,7 +83,9 @@ void ApplyResourceLabelsToTypesHelper(std::string const& resource_name,
   type.AddNeededByResource(resource_name);
   auto deps = type.needs_type();
   for (auto* dep : deps) {
-    ApplyResourceLabelsToTypesHelper(resource_name, *dep);
+    if (!internal::Contains(dep->needed_by_resource(), resource_name)) {
+      ApplyResourceLabelsToTypesHelper(resource_name, *dep);
+    }
   }
 }
 
@@ -130,21 +132,25 @@ StatusOr<std::map<std::string, DiscoveryTypeVertex>> ExtractTypesFromSchema(
   }
 
   auto const& schemas = discovery_doc["schemas"];
-  bool schemas_all_type_object = true;
+  bool schemas_all_recognized_types = true;
   bool schemas_all_have_id = true;
   std::string id;
   for (auto const& s : schemas) {
     if (!s.contains("id") || s["id"].is_null()) {
-      GCP_LOG(ERROR) << "current schema has no id. last schema with id="
-                     << (id.empty() ? "(none)" : id);
+        return internal::InvalidArgumentError(
+          absl::StrCat("current schema has no id. last schema with id=",
+                       (id.empty() ? "(none)" : id)),
+          GCP_ERROR_INFO().WithMetadata("schema", s.dump()));
       schemas_all_have_id = false;
       continue;
     }
     id = s["id"];
     std::string type = s.value("type", "untyped");
-    if (type != "object") {
-      GCP_LOG(ERROR) << id << " not type:object; is instead " << type;
-      schemas_all_type_object = false;
+    if (type != "object" && type != "any") {
+            return internal::InvalidArgumentError(
+          absl::StrCat(id, " unrecognized type; is type ", type),
+          GCP_ERROR_INFO().WithMetadata("schema", s.dump()));
+      schemas_all_recognized_types = false;
       continue;
     }
     types.emplace(id, DiscoveryTypeVertex{
@@ -160,9 +166,9 @@ StatusOr<std::map<std::string, DiscoveryTypeVertex>> ExtractTypesFromSchema(
         "Discovery Document contains schema without id field.");
   }
 
-  if (!schemas_all_type_object) {
+  if (!schemas_all_recognized_types) {
     return internal::InvalidArgumentError(
-        "Discovery Document contains non object schema.");
+        "Discovery Document contains unrecognized typed schema.");
   }
 
   return types;
@@ -647,14 +653,15 @@ Status GenerateProtosFromDiscoveryDoc(
   std::vector<std::future<google::cloud::Status>> tasks;
   tasks.reserve(files->first.size());
   for (auto f : files->first) {
-    tasks.push_back(std::async(
-        std::launch::async,
-        [](DiscoveryFile const& f,
-           DiscoveryDocumentProperties const& document_properties,
-           std::map<std::string, DiscoveryTypeVertex> const& types) {
-          return f.WriteFile(document_properties, types);
-        },
-        std::move(f), document_properties, *types));
+    // tasks.push_back(std::async(
+    //     std::launch::async,
+    //     [](DiscoveryFile const& f,
+    //        DiscoveryDocumentProperties const& document_properties,
+    //        std::map<std::string, DiscoveryTypeVertex> const& types) {
+        //  return 
+          f.WriteFile(document_properties, *types);
+  //       },
+  //       std::move(f), document_properties, *types));
   }
 
   for (auto f : files->second) {

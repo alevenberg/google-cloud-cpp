@@ -88,6 +88,7 @@ package $package_name$;
   }
 
   for (auto const& t : types_) {
+    // std::cout << "[alevenb]" << t->name() << "\n";
     auto message = t->JsonToProtobufMessage(types, package_name_);
     if (!message) return std::move(message).status();
     printer.Print("\n");
