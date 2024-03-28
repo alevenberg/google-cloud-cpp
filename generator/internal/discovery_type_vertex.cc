@@ -138,6 +138,11 @@ DiscoveryTypeVertex::DetermineTypeAndSynthesis(nlohmann::json const& v,
                     properties_for_synthesis, false, false};
   }
 
+  if (type == "any") {
+    return TypeInfo{"google.protobuf.Any", compare_package_name,
+                    properties_for_synthesis, false, false};
+  }
+
   if (type == "object" &&
       !(v.contains("properties") || v.contains("additionalProperties"))) {
     return internal::InvalidArgumentError(
@@ -164,6 +169,8 @@ DiscoveryTypeVertex::DetermineTypeAndSynthesis(nlohmann::json const& v,
       scalar_type = CheckForScalarType(additional_properties);
       if (scalar_type) {
         map_type = *scalar_type;
+      } else if (map_type == "any") {
+        map_type = "google.protobuf.Any";
       } else if (map_type == "object" &&
                  additional_properties.contains("properties")) {
         map_type = CapitalizeFirstLetter(field_name + "Item");
@@ -202,7 +209,7 @@ DiscoveryTypeVertex::DetermineTypeAndSynthesis(nlohmann::json const& v,
       scalar_type = CheckForScalarType(items);
       if (scalar_type) {
         type = *scalar_type;
-      } else if (type == "object" && items.contains("properties")) {
+      }  else if (type == "object" && items.contains("properties")) {
         // Synthesize a nested type for this array.
         type = CapitalizeFirstLetter(field_name + "Item");
         return TypeInfo{type, compare_package_name, &items, false, true};
