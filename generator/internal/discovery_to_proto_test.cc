@@ -155,11 +155,11 @@ TEST_F(ExtractTypesFromSchemaTest, SchemaMissingType) {
   ASSERT_TRUE(parsed_json.is_object());
   auto types = ExtractTypesFromSchema({}, parsed_json, &pool());
   EXPECT_THAT(types, StatusIs(StatusCode::kInvalidArgument,
-                              HasSubstr("contains non object schema")));
+                              HasSubstr("unrecognized schema type")));
   auto const log_lines = log.ExtractLines();
   EXPECT_THAT(
       log_lines,
-      Contains(HasSubstr("MissingType not type:object; is instead untyped")));
+      Contains(HasSubstr("MissingType type is not in `recognized_types`; is instead untyped")));
 }
 
 TEST_F(ExtractTypesFromSchemaTest, SchemaNonObject) {
@@ -180,11 +180,33 @@ TEST_F(ExtractTypesFromSchemaTest, SchemaNonObject) {
   ASSERT_TRUE(parsed_json.is_object());
   auto types = ExtractTypesFromSchema({}, parsed_json, &pool());
   EXPECT_THAT(types, StatusIs(StatusCode::kInvalidArgument,
-                              HasSubstr("contains non object schema")));
+                              HasSubstr("unrecognized schema type")));
   auto const log_lines = log.ExtractLines();
   EXPECT_THAT(
       log_lines,
-      Contains(HasSubstr("NonObject not type:object; is instead array")));
+      Contains(HasSubstr("NonObject type is not in `recognized_types`; is instead array")));
+}
+
+
+TEST_F(ExtractTypesFromSchemaTest, SchemaAnyType) {
+  auto constexpr kDiscoveryDocWithAnyTypeSchema = R"""(
+{
+  "schemas": {
+    "Foo": {
+      "id": "Foo",
+      "type": "any"
+    }
+  }
+}
+)""";
+
+  testing_util::ScopedLog log;
+  auto parsed_json =
+      nlohmann::json::parse(kDiscoveryDocWithAnyTypeSchema, nullptr, false);
+  ASSERT_TRUE(parsed_json.is_object());
+  auto types = ExtractTypesFromSchema({}, parsed_json, &pool());
+  ASSERT_THAT(types, IsOk());
+  EXPECT_THAT(*types, UnorderedElementsAre(Key("Foo")));
 }
 
 TEST(ExtractResourcesTest, EmptyResources) {
@@ -1073,6 +1095,42 @@ TEST(GenerateProtosFromDiscoveryDocTest, ProcessRequestResponseFailure) {
   auto result = GenerateProtosFromDiscoveryDoc(
       document_json, "", "", "", "", "",
       /*enable_parallel_write_for_discovery_protos=*/false);
+  EXPECT_THAT(result,
+              StatusIs(StatusCode::kInvalidArgument,
+                       HasSubstr("Response name=baz not found in types")));
+}
+
+
+TEST(GenerateProtosFromDiscoveryDocTest, ProcessAnyTypeInSchemas) {
+  auto constexpr kDocumentJson = R"""({
+  "basePath": "base/path",
+  "name": "my_product",
+  "rootUrl": "https://default.hostname.com/",
+  "version": "v8",
+  "resources": {
+    "bar": {
+      "methods": {
+        "get": {
+          "response": {
+            "$ref": "foo"
+          }
+        }
+      }
+    }
+  },
+  "schemas": {
+    "foo": {
+      "id": "foo",
+      "type": "any",
+      "properties": {}
+    }
+  }
+})""";
+  auto const document_json =
+      nlohmann::json::parse(kDocumentJson, nullptr, false);
+  ASSERT_TRUE(document_json.is_object());
+  auto result =
+      GenerateProtosFromDiscoveryDoc(document_json, "", "", "", "", "",/*enable_parallel_write_for_discovery_protos=*/false);
   EXPECT_THAT(result,
               StatusIs(StatusCode::kInvalidArgument,
                        HasSubstr("Response name=baz not found in types")));
