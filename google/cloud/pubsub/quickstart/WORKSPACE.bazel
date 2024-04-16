@@ -23,31 +23,29 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 # NOTE: Update this version and SHA256 as needed.
 http_archive(
     name = "google_cloud_cpp",
-    sha256 = "ce18fbd3a50170fb0c3d4cacf8a09136314f00136cdac99dad23b43de5d5bb62",
-    strip_prefix = "google-cloud-cpp-2.23.0",
-    url = "https://github.com/googleapis/google-cloud-cpp/archive/v2.23.0.tar.gz",
+    sha256 = "63f009092afd900cb812050bcecf607e37d762ac911e0bcbf4af9a432da91890",
+    strip_prefix = "google-cloud-cpp-2.19.0",
+    url = "https://github.com/googleapis/google-cloud-cpp/archive/v2.19.0.tar.gz",
 )
 
-load("@google_cloud_cpp//bazel:workspace0.bzl", "gl_cpp_workspace0")
+# Load indirect dependencies due to
+#     https://github.com/bazelbuild/bazel/issues/1943
+load("@google_cloud_cpp//bazel:google_cloud_cpp_deps.bzl", "google_cloud_cpp_deps")
 
-gl_cpp_workspace0()
+google_cloud_cpp_deps()
 
-load("@google_cloud_cpp//bazel:workspace1.bzl", "gl_cpp_workspace1")
+load("@com_google_googleapis//:repository_rules.bzl", "switched_rules_by_language")
 
-gl_cpp_workspace1()
+switched_rules_by_language(
+    name = "com_google_googleapis_imports",
+    cc = True,
+    grpc = True,
+)
 
-load("@google_cloud_cpp//bazel:workspace2.bzl", "gl_cpp_workspace2")
+load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
 
-gl_cpp_workspace2()
+grpc_deps()
 
-load("@google_cloud_cpp//bazel:workspace3.bzl", "gl_cpp_workspace3")
+load("@com_github_grpc_grpc//bazel:grpc_extra_deps.bzl", "grpc_extra_deps")
 
-gl_cpp_workspace3()
-
-load("@google_cloud_cpp//bazel:workspace4.bzl", "gl_cpp_workspace4")
-
-gl_cpp_workspace4()
-
-load("@google_cloud_cpp//bazel:workspace5.bzl", "gl_cpp_workspace5")
-
-gl_cpp_workspace5()
+grpc_extra_deps()

@@ -17,11 +17,12 @@ package(default_visibility = ["//visibility:private"])
 licenses(["notice"])  # Apache 2.0
 
 cc_binary(
-    name = "quickstart",
+    name = "subscriber_quickstart_timer",
     srcs = [
-        "quickstart.cc",
+        "subscriber_quickstart_timer.cc",
     ],
     deps = [
+        "@google_cloud_cpp//:opentelemetry",
         "@google_cloud_cpp//:pubsub",
     ],
 )
@@ -32,6 +33,143 @@ cc_binary(
         "subscriber_quickstart.cc",
     ],
     deps = [
+        "@google_cloud_cpp//:opentelemetry",
+        "@google_cloud_cpp//:pubsub",
+    ],
+)
+
+
+cc_binary(
+    name = "subscriber_fc_quickstart",
+    srcs = [
+        "subscriber_fc_quickstart.cc",
+    ],
+    deps = [
+        "@google_cloud_cpp//:opentelemetry",
+        "@google_cloud_cpp//:pubsub",
+    ],
+)
+
+
+cc_binary(
+    name = "subscriber_ordering_quickstart",
+    srcs = [
+        "subscriber_ordering_quickstart.cc",
+    ],
+    deps = [
+        "@google_cloud_cpp//:opentelemetry",
+        "@google_cloud_cpp//:pubsub",
+    ],
+)
+
+
+cc_binary(
+    name = "subscriber_concurrency_quickstart",
+    srcs = [
+        "subscriber_concurrency_quickstart.cc",
+    ],
+    deps = [
+        "@google_cloud_cpp//:opentelemetry",
+        "@google_cloud_cpp//:pubsub",
+    ],
+)
+cc_binary(
+    name = "subscriber_pull_quickstart",
+    srcs = [
+        "subscriber_pull_quickstart.cc",
+    ],
+    deps = [
+        "@google_cloud_cpp//:opentelemetry",
+        "@google_cloud_cpp//:pubsub",
+    ],
+)
+
+cc_binary(
+    name = "quickstart",
+    srcs = [
+        "quickstart.cc",
+    ],
+    deps = [
+        "//:common",
+        "@google_cloud_cpp//:opentelemetry",
+        "@google_cloud_cpp//:pubsub",
+    ],
+)
+
+cc_binary(
+    name = "clean",
+    srcs = [
+        "clean.cc",
+    ],
+    deps = [
+        "@google_cloud_cpp//:opentelemetry",
+        "@google_cloud_cpp//:pubsub",
+    ],
+)
+
+cc_binary(
+    name = "subscriber_ack",
+    srcs = [
+        "subscriber_ack.cc",
+    ],
+    deps = [
+        "@google_cloud_cpp//:opentelemetry",
+        "@google_cloud_cpp//:pubsub",
+    ],
+)
+
+
+cc_binary(
+    name = "nack",
+    srcs = [
+        "nack.cc",
+    ],
+    deps = [
+        "@google_cloud_cpp//:opentelemetry",
+        "@google_cloud_cpp//:pubsub",
+    ],
+)
+
+cc_binary(
+    name = "expire",
+    srcs = [
+        "expire.cc",
+    ],
+    deps = [
+        "@google_cloud_cpp//:opentelemetry",
+        "@google_cloud_cpp//:pubsub",
+    ],
+)
+
+
+cc_binary(
+    name = "nothing",
+    srcs = [
+        "nothing.cc",
+    ],
+    deps = [
+        "@google_cloud_cpp//:opentelemetry",
+        "@google_cloud_cpp//:pubsub",
+    ],
+)
+cc_binary(
+    name = "exactly",
+    srcs = [
+        "exactly.cc",
+    ],
+    deps = [
+        "@google_cloud_cpp//:opentelemetry",
+        "@google_cloud_cpp//:pubsub",
+    ],
+)
+
+cc_binary(
+    name = "alex",
+    srcs = [
+        "alex.cc",
+    ],
+    deps = [
+        "@google_cloud_cpp//:opentelemetry",
         "@google_cloud_cpp//:pubsub",
     ],
 )
