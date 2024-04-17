@@ -34,7 +34,12 @@ int main(int argc, char* argv[]) try {
   auto configuration = otel::ConfigureBasicTracing(project);
 
   // Create a client with OpenTelemetry tracing enabled.
-  auto options = gc::Options{}.set<gc::OpenTelemetryTracingOption>(true);
+  auto options =
+      gc::Options{}
+          .set<pubsub::MinDeadlineExtensionOption>(std::chrono::seconds(10))
+          .set<pubsub::MaxDeadlineExtensionOption>(std::chrono::seconds(10))
+          .set<pubsub::MaxDeadlineTimeOption>(std::chrono::seconds(60))
+          .set<gc::OpenTelemetryTracingOption>(true);
 
   auto subscriber = pubsub::Subscriber(pubsub::MakeSubscriberConnection(
       pubsub::Subscription(project_id, subscription_id), options));
@@ -43,6 +48,7 @@ int main(int argc, char* argv[]) try {
   while (response) {
     std::cout << "acking\n";
     std::cout << "Received message " << response->message << "\n";
+    sleep(20);
     std::move(response->handler).ack();
     response = subscriber.Pull();
   }

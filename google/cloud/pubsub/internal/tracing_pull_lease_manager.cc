@@ -51,6 +51,8 @@ class TracingPullLeaseManager : public PullLeaseManager {
   future<Status> ExtendLease(std::shared_ptr<SubscriberStub> stub,
                              std::chrono::system_clock::time_point time_now,
                              std::chrono::seconds extension) override {
+    auto span2 = internal::MakeSpan("test span");
+    span2->End();
     namespace sc = opentelemetry::trace::SemanticConventions;
     opentelemetry::trace::StartSpanOptions options;
     options.kind = opentelemetry::trace::SpanKind::kClient;
