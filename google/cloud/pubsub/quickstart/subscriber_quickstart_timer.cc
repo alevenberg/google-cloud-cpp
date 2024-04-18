@@ -39,14 +39,15 @@ int main(int argc, char* argv[]) try {
 
   // Create a client with OpenTelemetry tracing enabled.
   auto options = gc::Options{}.set<gc::OpenTelemetryTracingOption>(true);
-  options.set<pubsub::MinDeadlineExtensionOption>(std::chrono::seconds(1));
-  options.set<pubsub::MaxDeadlineExtensionOption>(std::chrono::seconds(3));
- // lease management options
+  options.set<pubsub::MinDeadlineExtensionOption>(std::chrono::seconds(10));
+  options.set<pubsub::MaxDeadlineExtensionOption>(std::chrono::seconds(10));
+  // lease management options
   options.set<pubsub::MaxOutstandingMessagesOption>(2);
+  options.set<pubsub::MaxDeadlineTimeOption>(std::chrono::seconds(60));
   // options.set<pubsub::MaxOutstandingBytesOption>(8 * kMiB);
-          // Concurrency
-          //  options .set<pubsub::MaxConcurrencyOption>(8);
-          //  options .set<GrpcBackgroundThreadPoolSizeOption>(16);
+  // Concurrency
+  //  options .set<pubsub::MaxConcurrencyOption>(8);
+  //  options .set<GrpcBackgroundThreadPoolSizeOption>(16);
   auto subscriber = pubsub::Subscriber(pubsub::MakeSubscriberConnection(
       pubsub::Subscription(project_id, subscription_id), options));
 
@@ -96,6 +97,7 @@ int main(int argc, char* argv[]) try {
         //                 << "\n";
         //   std::cout << attribute_msg.str();
         // }
+        sleep(10);
         // std::move(h).nack();
         std::move(h).ack();
       });
