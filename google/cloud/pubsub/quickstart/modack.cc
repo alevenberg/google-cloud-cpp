@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) try {
   std::string const subscription_id = "modack-sub";
   std::string const topic_id = "modack-topic";
 
-  auto constexpr kWaitTimeout = std::chrono::seconds(180);
+  auto constexpr kWaitTimeout = std::chrono::seconds(60);
 
   // Create a namespace alias to make the code easier to read.
   namespace pubsub = ::google::cloud::pubsub;
@@ -45,8 +45,9 @@ int main(int argc, char* argv[]) try {
       pubsub::Subscription(project_id, subscription_id),
       gc::Options{}
           .set<gc::OpenTelemetryTracingOption>(true)
-          .set<pubsub::MinDeadlineExtensionOption>(std::chrono::seconds(5))
-          .set<pubsub::MaxDeadlineExtensionOption>(std::chrono::seconds(5))));
+          .set<pubsub::MinDeadlineExtensionOption>(std::chrono::seconds(10))
+          .set<pubsub::MaxDeadlineExtensionOption>(std::chrono::seconds(10))
+          .set<pubsub::MaxDeadlineTimeOption>(std::chrono::seconds(60))));
   auto publisher = pubsub::Publisher(pubsub::MakePublisherConnection(
       pubsub::Topic(project_id, topic_id),
       gc::Options{}.set<gc::OpenTelemetryTracingOption>(true)));
@@ -79,11 +80,6 @@ int main(int argc, char* argv[]) try {
         std::cout << m.data() << ". ";
         std::cout << "Received message with id: (" << m.message_id() << ")\n";
         sleep(10);
-        if (i ==0) {
-            std::move(h).ack();
-            i++;
-        }
-
       });
 
   std::cout << "Waiting for messages on " + subscription_id + "...\n";

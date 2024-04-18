@@ -22,11 +22,12 @@
 #include <iostream>
 
 // bazel run //google/cloud/pubsub/quickstart:subscriber_ack
-// gcloud pubsub topics create ack
-// gcloud pubsub subscriptions create ack-sub --topic=ack
+// gcloud pubsub topics create ack-topic
+// gcloud pubsub subscriptions create ack-sub --topic=ack-topic
 int main(int argc, char* argv[]) try {
   std::string const project_id = "alevenb-test";
-  std::string const subscription_id = "ack-sub1";
+  std::string const subscription_id = "ack-sub2";
+  std::string const topic_id = "ack-topic";
 
   auto constexpr kWaitTimeout = std::chrono::seconds(30);
 
@@ -43,20 +44,17 @@ int main(int argc, char* argv[]) try {
   auto options = gc::Options{}.set<gc::OpenTelemetryTracingOption>(true);
   auto subscriber = pubsub::Subscriber(pubsub::MakeSubscriberConnection(
       pubsub::Subscription(project_id, subscription_id), options));
-  std::string const topic_id = "ack-topic";
   auto publisher = pubsub::Publisher(pubsub::MakePublisherConnection(
       pubsub::Topic(project_id, topic_id),
-      gc::Options{}
-          .set<gc::OpenTelemetryTracingOption>(true)));
+      gc::Options{}.set<gc::OpenTelemetryTracingOption>(true)));
 
   int n = 6;
   std::vector<gc::future<void>> ids;
   for (int i = 0; i < n; i++) {
     auto id =
         publisher
-            .Publish(pubsub::MessageBuilder()
-                         .SetData(std::to_string(i))
-                         .Build())
+            .Publish(
+                pubsub::MessageBuilder().SetData(std::to_string(i)).Build())
             .then([index = i](gc::future<gc::StatusOr<std::string>> f) {
               auto status = f.get();
               if (!status) {
@@ -64,8 +62,7 @@ int main(int argc, char* argv[]) try {
                 return;
               }
               std::cout << index << ". ";
-              std::cout << "Sent message with id: (" << *status
-                        << ")\n";
+              std::cout << "Sent message with id: (" << *status << ")\n";
             });
     ids.push_back(std::move(id));
   }
@@ -75,10 +72,8 @@ int main(int argc, char* argv[]) try {
   auto session =
       subscriber.Subscribe([&](pubsub::Message const& m, pubsub::AckHandler h) {
         std::cout << m.data() << ". ";
-        std::cout << "Received message with id: (" << m.message_id()
-                  << ")\n";
-        sleep(2);
-        std::move(h).ack();
+        std::cout << "Received message with id: (" << m.message_id() << ")\n";
+        std::move(h).nack();
       });
 
   std::cout << "Waiting for messages on " + subscription_id + "...\n";
