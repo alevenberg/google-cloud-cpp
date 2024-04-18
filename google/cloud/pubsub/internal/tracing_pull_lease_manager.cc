@@ -42,7 +42,11 @@ class TracingPullLeaseManager : public PullLeaseManager {
                 opentelemetry::context::RuntimeContext::GetCurrent())
                 ->GetContext()) {}
 
-  void StartLeaseLoop() override { child_->StartLeaseLoop(); };
+  void StartLeaseLoop() override {
+    std::cerr << "ALEVENB"
+              << "StartLeaseLoopn\n";
+    child_->StartLeaseLoop();
+  };
 
   std::chrono::milliseconds LeaseRefreshPeriod() const override {
     return child_->LeaseRefreshPeriod();
@@ -56,6 +60,8 @@ class TracingPullLeaseManager : public PullLeaseManager {
     namespace sc = opentelemetry::trace::SemanticConventions;
     opentelemetry::trace::StartSpanOptions options;
     options.kind = opentelemetry::trace::SpanKind::kClient;
+    std::cerr << "ALEVENB"
+              << "make mod ack span\n";
     auto span = internal::MakeSpan(
         child_->subscription().subscription_id() + " modack",
         {{sc::kMessagingSystem, "gcp_pubsub"},
