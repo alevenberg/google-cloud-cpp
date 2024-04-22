@@ -201,6 +201,16 @@ future<Status> DefaultSubscriberStub::AsyncModifyAckDeadline(
     // NOLINTNEXTLINE(performance-unnecessary-value-param)
     google::cloud::internal::ImmutableOptions,
     google::pubsub::v1::ModifyAckDeadlineRequest const& request) {
+  // std::unique_ptr<
+  //     grpc::ClientAsyncResponseReaderInterface<google::protobuf::Empty>>
+  //     stream;
+  // stream->ReadInitialMetadata(tag(4));
+  // auto lambda = [this](
+  //                   grpc::ClientContext* context,
+  //                   google::pubsub::v1::ModifyAckDeadlineRequest const&
+  //                   request, grpc::CompletionQueue* cq) {
+  //   return grpc_stub_->AsyncModifyAckDeadline(context, request, cq);
+  // };
   return internal::MakeUnaryRpcImpl<
              google::pubsub::v1::ModifyAckDeadlineRequest,
              google::protobuf::Empty>(

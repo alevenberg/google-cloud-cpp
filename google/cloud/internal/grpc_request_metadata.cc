@@ -15,6 +15,7 @@
 #include "google/cloud/internal/grpc_request_metadata.h"
 #include "google/cloud/internal/absl_str_cat_quiet.h"
 #include "google/cloud/internal/absl_str_join_quiet.h"
+#include "google/cloud/log.h"
 #include <grpcpp/grpcpp.h>
 
 namespace google {
@@ -47,8 +48,11 @@ RpcMetadata GetRequestMetadataFromContext(grpc::ClientContext const& context) {
       /*.trailers=*/{},
   };
   auto hint = metadata.headers.end();
+  GCP_LOG(INFO) << "alevenb - GetServerInitialMetadata\n";
   for (auto const& kv : context.GetServerInitialMetadata()) {
-    // gRPC metadata is stored in `grpc::string_ref`, a type inspired by
+    GCP_LOG(INFO) << "alevenb - kv\n";
+    // gRPC metadata is stored in `grpc::string_ref`,
+    // a type inspired by
     // `std::string_view`. We need to explicitly convert these to `std::string`.
     // In addition, we use a prefix to distinguish initial vs. trailing headers.
     auto key = std::string{kv.first.data(), kv.first.size()};
@@ -57,7 +61,9 @@ RpcMetadata GetRequestMetadataFromContext(grpc::ClientContext const& context) {
         metadata.headers.emplace_hint(hint, std::move(key), std::move(value)));
   }
   hint = metadata.trailers.end();
+  GCP_LOG(INFO) << "alevenb - GetServerTrailingMetadata\n";
   for (auto const& kv : context.GetServerTrailingMetadata()) {
+    GCP_LOG(INFO) << "alevenb - kv\n";
     // Same as above, convert `grpc::string_ref` to `std::string`:
     auto key = std::string{kv.first.data(), kv.first.size()};
     auto value = std::string{kv.second.data(), kv.second.size()};

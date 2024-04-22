@@ -153,6 +153,18 @@ std::unique_ptr<AsyncStreamingReadRpc<Response>> MakeStreamingReadRpc(
     PrepareAsyncReadRpc<Request, Response> async_call) {
   auto cq_impl = GetCompletionQueueImpl(cq);
   auto stream = async_call(context.get(), request, cq_impl->cq());
+  void* intial_metadata_tag;
+  bool inital_metadata_ok = false;
+  auto deadline = std::chrono::system_clock::now() + std::chrono::seconds(30);
+  cq_impl->AsyncNext(&intial_metadata_tag, &inital_metadata_ok, deadline);
+  if (inital_metadata_ok) {
+    std::cout << "asking for metadata\n";
+    rpc->ReadInitialMetadata(intial_metadata_tag);
+    bool ok = true;
+    if (!cq_impl->Next(&intial_metadata_tag, &ok) || !ok) {
+      std::cout << "operation failed.\n";
+    }
+  }
   return std::make_unique<AsyncStreamingReadRpcImpl<Response>>(
       std::move(cq_impl), std::move(context), std::move(options),
       std::move(stream));

@@ -48,6 +48,7 @@ namespace internal {
  * @tparam Request the type of the RPC request.
  * @tparam Response the type of the RPC response.
  */
+
 template <typename Request, typename Response>
 class AsyncUnaryRpcFuture : public AsyncGrpcOperation {
  public:
@@ -63,6 +64,18 @@ class AsyncUnaryRpcFuture : public AsyncGrpcOperation {
              Request const& request, grpc::CompletionQueue* cq, void* tag) {
     promise_ = promise<StatusOr<Response>>([context] { context->TryCancel(); });
     auto rpc = async_call(context.get(), request, cq);
+    void* intial_metadata_tag;
+    bool inital_metadata_ok = false;
+    auto deadline = std::chrono::system_clock::now() + std::chrono::seconds(30);
+    cq->AsyncNext(&intial_metadata_tag, &inital_metadata_ok, deadline);
+    if (inital_metadata_ok) {
+      std::cout << "asking for metadata\n";
+      rpc->ReadInitialMetadata(intial_metadata_tag);
+      bool ok = true;
+      if (!cq->Next(&intial_metadata_tag, &ok) || !ok) {
+        std::cout << "operation failed.\n";
+      }
+    }
     rpc->Finish(&response_, &status_, tag);
   }
 

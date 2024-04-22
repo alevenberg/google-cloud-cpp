@@ -46,6 +46,18 @@ TEST(GrpcRequestMetadata, GetRequestMetadataFromContext) {
                                                 Pair("trailer2", "value4")));
 }
 
+TEST(GrpcRequestMetadata, GetRequestMetadataFromContextHasEmptyMetadata) {
+  grpc::ClientContext context;
+
+  auto md = GetRequestMetadataFromContext(context);
+  EXPECT_THAT(md.headers,
+              UnorderedElementsAre(
+                  // This function also returns the peer and compression
+                  // algorithm as synthetic headers.
+                  Pair(":grpc-context-peer", _),
+                  Pair(":grpc-context-compression-algorithm", "identity")));
+}
+
 TEST(GrpcRequestMetadata, FormatForLoggingDecorator) {
   struct Test {
     RpcMetadata metadata;
