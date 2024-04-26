@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) try {
   std::string const project_id = "alevenb-test";
   std::string const subscription_id = "expire-sub";
 
-  auto constexpr kWaitTimeout = std::chrono::seconds(60);
+  auto constexpr kWaitTimeout = std::chrono::seconds(40);
 
   // Create a namespace alias to make the code easier to read.
   namespace pubsub = ::google::cloud::pubsub;
@@ -44,8 +44,8 @@ int main(int argc, char* argv[]) try {
       pubsub::Subscription(project_id, subscription_id),
       gc::Options{}
           .set<gc::OpenTelemetryTracingOption>(true)
-          .set<pubsub::MinDeadlineExtensionOption>(std::chrono::seconds(10))
-          .set<pubsub::MaxDeadlineExtensionOption>(std::chrono::seconds(60))));
+          .set<pubsub::MinDeadlineExtensionOption>(std::chrono::seconds(5))
+          .set<pubsub::MaxDeadlineExtensionOption>(std::chrono::seconds(10))));
   std::string const topic_id = "expire-topic";
   auto publisher = pubsub::Publisher(pubsub::MakePublisherConnection(
       pubsub::Topic(project_id, topic_id),
@@ -77,7 +77,7 @@ int main(int argc, char* argv[]) try {
       subscriber.Subscribe([&](pubsub::Message const& m, pubsub::AckHandler h) {
         std::cout << m.data() << ". ";
         std::cout << "Received message with id: (" << m.message_id() << ")\n";
-        sleep(41);
+        sleep(21);
       });
 
   std::cout << "Waiting for messages on " + subscription_id + "...\n";
@@ -87,14 +87,14 @@ int main(int argc, char* argv[]) try {
     std::cout << "timeout reached, ending session\n";
     session.cancel();
   }
-   session =
+  session =
       subscriber.Subscribe([&](pubsub::Message const& m, pubsub::AckHandler h) {
         std::cout << "Received message " << m << "\n";
         std::move(h).ack();
       });
 
   // Blocks until the timeout is reached.
-   result = session.wait_for(std::chrono::seconds(10));
+  result = session.wait_for(std::chrono::seconds(10));
 
   return 0;
 } catch (google::cloud::Status const& status) {
