@@ -251,9 +251,9 @@ INSTANTIATE_TEST_SUITE_P(
             R"""({"type":"object","additionalProperties":{"type":"string"}})""",
             "string", true, true, false, false},
         DetermineTypesSuccess{
-            "any_to_struct",
+            "map_any",
             R"""({"type":"object","additionalProperties":{"type":"any"}})""",
-            "google.protobuf.Struct", true, true, false, false},
+            "google.protobuf.Any", true, true, false, false},
         DetermineTypesSuccess{
             "map_nested_message",
             R"""({"type":"object","additionalProperties":{"type":"object", "properties":{}}})""",

@@ -145,8 +145,7 @@ DiscoveryTypeVertex::DetermineTypeAndSynthesis(nlohmann::json const& v,
         properties_for_synthesis = &additional_properties;
         is_message = true;
       } else if (map_type == "any") {
-        return TypeInfo{"google.protobuf.Struct", compare_package_name,
-                        properties_for_synthesis, true, is_message};
+        map_type = "google.protobuf.Any";
       } else {
         return internal::InvalidArgumentError(
             absl::StrFormat("field: %s unknown type: %s for map field.",
