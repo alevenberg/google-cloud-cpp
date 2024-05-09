@@ -75,7 +75,7 @@ def main():
     # Call the function to print the files
     print_files_recursively(directory)
 
-    # subprocess.run(["ci/cloudbuild/build.sh", "-t", "checkers-pr"])
+    subprocess.run(["ci/cloudbuild/build.sh", "-t", "checkers-pr"])
 
 
 if __name__ == "__main__":
