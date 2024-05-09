@@ -81,7 +81,7 @@ OperationResult RunListProjects(ProjectBenchmark& benchmark) {
               << "\n"
               << std::flush;
 
-    return ::google::cloud::Status(StatusCode::kOk, "");
+    return ::google::cloud::internal::OkError("", GCP_ERROR_INFO());
   };
   return Benchmark::TimeOperation(std::move(op));
 }

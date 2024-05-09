@@ -18,6 +18,7 @@
 #include "google/cloud/pubsub/subscription.h"
 #include "google/cloud/pubsub/version.h"
 #include "google/cloud/future.h"
+#include "google/cloud/internal/make_status.h"
 #include "google/cloud/status.h"
 #include <memory>
 
@@ -114,12 +115,12 @@ class PullAckHandler {
     /// The implementation for `PullAckHandler::ack()`
     virtual future<Status> ack() {
       return make_ready_future(
-          Status(StatusCode::kUnimplemented, "base class"));
+          internal::UnimplementedError("base class", GCP_ERROR_INFO()));
     }
     /// The implementation for `PullAckHandler::nack()`
     virtual future<Status> nack() {
       return make_ready_future(
-          Status(StatusCode::kUnimplemented, "base class"));
+          internal::UnimplementedError("base class", GCP_ERROR_INFO()));
     }
     /// The implementation for `PullAckHandler::delivery_attempt()`
     virtual std::int32_t delivery_attempt() const { return 0; }

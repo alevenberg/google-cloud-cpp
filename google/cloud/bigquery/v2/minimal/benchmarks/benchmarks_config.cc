@@ -17,6 +17,7 @@
 #include "google/cloud/internal/build_info.h"
 #include "google/cloud/internal/compiler_info.h"
 #include "google/cloud/internal/getenv.h"
+#include "google/cloud/internal/make_status.h"
 #include "google/cloud/internal/random.h"
 #include "absl/strings/match.h"
 #include <chrono>
@@ -39,7 +40,7 @@ auto invalid_argument = [](std::string msg) {
   return google::cloud::Status(StatusCode::kInvalidArgument, std::move(msg));
 };
 
-auto status_ok = google::cloud::Status(StatusCode::kOk, "");
+auto status_ok = google::cloud::internal::OkError("", GCP_ERROR_INFO());
 
 std::string insert_job_dr_request_body =
     R"({"jobReference":{"projectId":"bigquery-devtools-drivers")"
