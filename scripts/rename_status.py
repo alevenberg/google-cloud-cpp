@@ -7,11 +7,11 @@ import subprocess
 INITIAL_MATCH_PATTERN = re.compile(r"StatusCode::k(\w+)")
 
 MATCH_PATTERN = re.compile(
-    r"Status[\(]\s*(google::cloud::)?\s*StatusCode::k(.*),\s*([\S\s]*)[\)];",
+    r"Status[\(]\s*(google::cloud::)?\s*StatusCode::k(.*),\s*([\S\s]*?)[\)]",
     re.MULTILINE,
 )
 
-REPLACE_PATTERN = r"internal::\2Error(\3, GCP_ERROR_INFO());"
+REPLACE_PATTERN = r"internal::\2Error(\3, GCP_ERROR_INFO())"
 
 
 def print_files_recursively(directory):
