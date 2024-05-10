@@ -7,11 +7,11 @@ import subprocess
 INITIAL_MATCH_PATTERN = re.compile(r"StatusCode::k(\w+)")
 
 MATCH_PATTERN = re.compile(
-    r"Status[\(]\s*(google::cloud::)?\s*StatusCode::k(.*),\s*([\S\s]*)[\)]",
+    r"Status[\(]\s*(google::cloud::)?\s*StatusCode::k(.*),\s*([\S\s]*)[\)];",
     re.MULTILINE,
 )
 
-REPLACE_PATTERN = r'internal::\2Error(\3, GCP_ERROR_INFO())'
+REPLACE_PATTERN = r"internal::\2Error(\3, GCP_ERROR_INFO());"
 
 
 def print_files_recursively(directory):
@@ -25,6 +25,7 @@ def print_files_recursively(directory):
     for root, _, files in os.walk(directory):
         for file in files:
             filename = os.path.join(root, file)
+            # print(f"Trying file: {filename}")
             if filename.endswith("test.cc"):
                 continue
             try:
@@ -35,7 +36,9 @@ def print_files_recursively(directory):
             matches = re.findall(INITIAL_MATCH_PATTERN, text)
             if len(matches) == 0:
                 continue
-            print(matches)
+            if not all(x != "Unimplemented" and x != "Ok" for x in matches):
+                continue
+            # print(matches)
             total_files += 1
             print(f"Opening file: {filename}")
             print(f"Matches {len(matches)}: {matches}")
@@ -50,8 +53,8 @@ def print_files_recursively(directory):
                 text,
                 count=1,
             )
-            # if filename == "google/cloud/pubsublite/endpoint.cc":
-            #     print(text)
+            # if filename == "google/cloud/generator/internal/standalone_main.cc":
+            # print(text)
 
             f = open(filename, "w")
             f.write("".join(text))
@@ -72,7 +75,7 @@ def main():
     # Call the function to print the files
     print_files_recursively(directory)
 
-    subprocess.run(["ci/cloudbuild/build.sh", "-t", "checkers-pr"])
+    # subprocess.run(["ci/cloudbuild/build.sh", "-t", "checkers-pr"])
 
 
 if __name__ == "__main__":
