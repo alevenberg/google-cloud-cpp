@@ -80,7 +80,7 @@ class AsyncTimerFuture : public AsyncGrpcOperation {
       state_ = kCancelled;
       lk.unlock();
       // Release the lock before (potentially) calling application code.
-      promise_.set_value(Cancelled());
+      promise_.set_value(Cancelled(GCP_ERROR_INFO()));
       return;
     }
     state_ = kCancelled;
@@ -92,12 +92,12 @@ class AsyncTimerFuture : public AsyncGrpcOperation {
 
   bool Notify(bool ok) override {
     ScopedCallContext scope(call_context_);
-    promise_.set_value(ok ? ValueType(deadline_) : Cancelled());
+    promise_.set_value(ok ? ValueType(deadline_) : Cancelled(GCP_ERROR_INFO()));
     return true;
   }
 
-  static ValueType Cancelled() {
-    return internal::CancelledError("timer canceled", GCP_ERROR_INFO());
+  static ValueType Cancelled(internal::ErrorInfoBuilder info) {
+    return CancelledError("timer canceled", std::move(info));
   }
 
   enum State { kIdle, kSet, kCancelled };
