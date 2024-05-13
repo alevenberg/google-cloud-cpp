@@ -113,7 +113,8 @@ GrpcImpersonateServiceAccount::AsyncConfigureContext(
         future<StatusOr<AccessToken>> f) {
       auto self = w.lock();
       if (!self) {
-        return internal::UnknownError("lost reference", GCP_ERROR_INFO());}
+        return internal::UnknownError("lost reference", GCP_ERROR_INFO());
+      }
       return self->OnGetCallCredentials(std::move(context), f.get());
     }
   };
